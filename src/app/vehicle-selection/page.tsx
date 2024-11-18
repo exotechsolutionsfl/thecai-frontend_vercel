@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { Loader2, Save, Check } from 'lucide-react'
 import { apiFetch } from '@api/api'
-import { useTheme } from '@context/ThemeProvider'
+// import { useTheme } from '@context/ThemeProvider'
 import { useSavedVehicles } from '@context/VehicleContext'
 import { Button } from "@/components/ui/Button"
 import { Card, CardContent } from "@/components/ui/Card"
@@ -68,7 +68,7 @@ export default function VehicleSelection() {
   const [isSaved, setIsSaved] = useState(false)
 
   const router = useRouter()
-  const { theme } = useTheme()
+  // const { theme } = useTheme()
   const { savedVehicles, setSavedVehicles } = useSavedVehicles()
 
   useEffect(() => {
