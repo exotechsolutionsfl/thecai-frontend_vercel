@@ -11,10 +11,11 @@
   "dependencies": {
     "@radix-ui/react-popover": "^1.1.2",
     "@radix-ui/react-separator": "^1.1.0",
+    "@radix-ui/react-slot": "^1.1.0",
     "@types/mongodb": "^4.0.6",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
-    "framer-motion": "^11.9.0",
+    "framer-motion": "^11.11.17",
     "lucide-react": "^0.447.0",
     "mini-svg-data-uri": "^1.4.4",
     "mongodb": "^6.9.0",
@@ -29,6 +30,7 @@
     "react-markdown": "^9.0.1",
     "react-pdf": "^9.1.1",
     "tailwind-merge": "^2.5.4",
+    "tailwindcss-animate": "^1.0.7",
     "use-debounce": "^10.0.4"
   },
   "devDependencies": {
