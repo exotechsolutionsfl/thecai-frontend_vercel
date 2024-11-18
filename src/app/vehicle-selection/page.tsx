@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { ChevronDown, Loader2, Save, Check } from 'lucide-react'
+import { Loader2, Save, Check } from 'lucide-react'
 import { apiFetch } from '@api/api'
 import { useTheme } from '@context/ThemeProvider'
 import { useSavedVehicles } from '@context/VehicleContext'
@@ -21,8 +21,6 @@ interface SelectDropdownProps {
 }
 
 function SelectDropdown({ label, options, value, onChange, loading }: SelectDropdownProps) {
-  const { theme } = useTheme()
-
   return (
     <div className="space-y-2">
       <Label htmlFor={label}>{label}</Label>
