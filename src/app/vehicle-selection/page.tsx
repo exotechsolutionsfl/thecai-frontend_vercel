@@ -2,18 +2,21 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronDownIcon, Loader2, Save, Check } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { ChevronDown, Loader2, Save, Check } from 'lucide-react'
 import { apiFetch } from '@api/api'
-import Loading from '@components/loading'
 import { useTheme } from '@context/ThemeProvider'
 import { useSavedVehicles } from '@context/VehicleContext'
+import { Button } from "@/components/ui/Button"
+import { Card, CardContent } from "@/components/ui/Card"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select"
+import { Label } from "@/components/ui/label"
 
 interface SelectDropdownProps {
   label: string
   options: string[]
   value: string
-  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void
+  onChange: (value: string) => void
   loading: boolean
 }
 
@@ -21,42 +24,36 @@ function SelectDropdown({ label, options, value, onChange, loading }: SelectDrop
   const { theme } = useTheme()
 
   return (
-    <div className="relative">
-      <label htmlFor={label} className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
-        {label}
-      </label>
-      <div className="relative">
-        <select
-          id={label}
-          value={value}
-          onChange={onChange}
-          className={`block w-full ${theme === 'dark' ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300 text-black'} border rounded-lg py-2 px-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary appearance-none`}
-          disabled={loading}
-        >
-          <option value="">Select {label}</option>
+    <div className="space-y-2">
+      <Label htmlFor={label}>{label}</Label>
+      <Select value={value} onValueChange={onChange} disabled={loading}>
+        <SelectTrigger id={label} className="w-full">
+          <SelectValue placeholder={`Select ${label}`} />
+        </SelectTrigger>
+        <SelectContent>
           {options.length > 0 ? (
             options.map((option) => (
-              <option key={option} value={option}>
+              <SelectItem key={option} value={option}>
                 {option}
-              </option>
+              </SelectItem>
             ))
           ) : (
-            <option value="">No {label} available</option>
+            <SelectItem value="" disabled>
+              No {label} available
+            </SelectItem>
           )}
-        </select>
-        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-          {loading ? (
-            <Loader2 className={`h-5 w-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'} animate-spin`} />
-          ) : (
-            <ChevronDownIcon className={`h-5 w-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`} />
-          )}
+        </SelectContent>
+      </Select>
+      {loading && (
+        <div className="flex justify-center">
+          <Loader2 className="h-5 w-5 animate-spin text-primary" />
         </div>
-      </div>
+      )}
     </div>
   )
 }
 
-export default function Component() {
+export default function VehicleSelection() {
   const [makes, setMakes] = useState<string[]>([])
   const [models, setModels] = useState<string[]>([])
   const [years, setYears] = useState<string[]>([])
@@ -116,8 +113,7 @@ export default function Component() {
     }
   }
 
-  const handleMakeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const make = e.target.value
+  const handleMakeChange = (make: string) => {
     setSelectedMake(make)
     setSelectedModel('')
     setSelectedYear('')
@@ -129,8 +125,7 @@ export default function Component() {
     }
   }
 
-  const handleModelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const model = e.target.value
+  const handleModelChange = (model: string) => {
     setSelectedModel(model)
     setSelectedYear('')
     setIsSaved(false)
@@ -141,8 +136,8 @@ export default function Component() {
     }
   }
 
-  const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedYear(e.target.value)
+  const handleYearChange = (year: string) => {
+    setSelectedYear(year)
     setIsSaved(false)
   }
 
@@ -178,15 +173,19 @@ export default function Component() {
   }
 
   if (loading.page) {
-    return <Loading message={null} />
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
   }
 
   return (
-    <div className={`fixed inset-0 ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-white text-black'} font-sans`}>
-      <div className="flex items-center justify-center w-full h-full">
-        <div className="w-full max-w-md p-4">
-          <h1 className={`text-2xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-black'}`}>Select Your Vehicle</h1>
-          <div className="space-y-4">
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardContent className="pt-6">
+          <h1 className="text-2xl font-bold mb-6 text-center">Select Your Vehicle</h1>
+          <div className="space-y-6">
             <SelectDropdown
               label="Make"
               options={makes}
@@ -242,34 +241,33 @@ export default function Component() {
                   transition={{ duration: 0.3 }}
                   className="flex space-x-2"
                 >
-                  <button
+                  <Button
                     onClick={handleContinue}
-                    className={`flex-1 ${theme === 'dark' ? 'bg-white text-black hover:bg-gray-200' : 'bg-black hover:bg-gray-800 text-white'} font-bold py-3 px-6 rounded-lg text-lg shadow-lg transition-all duration-300 ease-in-out`}
+                    className="flex-1"
                     disabled={loading.vehicleType}
                   >
                     {loading.vehicleType ? (
-                      <Loader2 className="w-6 h-6 animate-spin mx-auto" />
-                    ) : (
-                      'Continue'
-                    )}
-                  </button>
-                  <button
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    ) : null}
+                    Continue
+                  </Button>
+                  <Button
                     onClick={handleSaveVehicle}
-                    className={`${theme === 'dark' ? 'bg-gray-800 hover:bg-gray-700 text-white' : 'bg-gray-200 hover:bg-gray-300 text-black'} font-bold py-3 px-6 rounded-lg text-lg shadow-lg transition-all duration-300 ease-in-out`}
+                    variant="outline"
                     disabled={isSaved}
                   >
                     {isSaved ? (
-                      <Check className="w-6 h-6 text-green-500" />
+                      <Check className="w-4 h-4 text-green-500" />
                     ) : (
-                      <Save className="w-6 h-6" />
+                      <Save className="w-4 h-4" />
                     )}
-                  </button>
+                  </Button>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
