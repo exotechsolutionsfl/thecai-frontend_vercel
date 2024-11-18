@@ -7,8 +7,13 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronRight, X, Plus, MessageSquare, ChevronLeft, Moon, Sun, FileText, Menu } from 'lucide-react'
 import { useSavedVehicles } from '@context/VehicleContext'
 import { useTheme } from '@context/ThemeProvider'
-import toast, { Toaster } from 'react-hot-toast'
+import { Toaster, toast } from 'react-hot-toast'
 import { apiFetch } from '@api/api'
+import { Button } from "@/components/ui/Button"
+import { Card, CardContent } from "@/components/ui/Card"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/Textarea"
 
 interface BreadcrumbItem {
   label: string;
@@ -81,10 +86,6 @@ export default function Vessel({ children }: VesselProps) {
         toast.success('Feedback submitted successfully!', {
           duration: 3000,
           position: 'bottom-center',
-          style: {
-            background: theme === 'dark' ? '#ffffff' : '#000000',
-            color: theme === 'dark' ? '#000000' : '#ffffff',
-          },
         })
         setFeedback('')
         setFeedbackType('issue')
@@ -97,10 +98,6 @@ export default function Vessel({ children }: VesselProps) {
       toast.error('Failed to submit feedback. Please try again.', {
         duration: 3000,
         position: 'bottom-center',
-        style: {
-          background: theme === 'dark' ? '#ffffff' : '#000000',
-          color: theme === 'dark' ? '#000000' : '#ffffff',
-        },
       })
     } finally {
       setIsSubmitting(false)
@@ -165,15 +162,9 @@ export default function Vessel({ children }: VesselProps) {
     <div className="flex flex-col min-h-screen">
       <style jsx global>{`
         @keyframes glow {
-          0% {
-            background-position: 0% 50%;
-          }
-          50% {
-            background-position: 100% 50%;
-          }
-          100% {
-            background-position: 0% 50%;
-          }
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
         }
         .glow-text {
           background: linear-gradient(90deg, #ff00ff, #00ffff, #ff00ff);
@@ -184,36 +175,36 @@ export default function Vessel({ children }: VesselProps) {
           animation: glow 3s linear infinite;
         }
       `}</style>
-      <header className={`sticky top-0 z-10 ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-white text-black'} shadow-md`}>
+      <header className="sticky top-0 z-10 bg-background shadow-md">
         <Toaster />
         <div className="p-4 flex items-center justify-between relative">
           <div className="flex items-center z-10">
-            <Link href="/" className={`text-2xl font-bold ${theme === 'dark' ? 'text-white hover:text-gray-300' : 'text-black hover:text-gray-600'} transition-colors duration-300`}>
+            <Link href="/" className="text-2xl font-bold hover:text-primary transition-colors duration-300">
               Thec<span className="glow-text">AI</span>
             </Link>
           </div>
           <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
             {title && <h2 className="text-xl font-semibold">{title}</h2>}
           </div>
-          <button
-            id="settings-button"
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={handleToggleSettings}
-            className={`${theme === 'dark' ? 'text-white hover:text-gray-300' : 'text-black hover:text-gray-600'} transition-colors duration-300 relative z-30`}
             aria-label="Toggle settings"
           >
             <Menu className="w-6 h-6" />
-          </button>
+          </Button>
         </div>
         {breadcrumbs && breadcrumbs.length > 0 && (
           <nav aria-label="Breadcrumb" className="text-sm px-4 pb-2">
             <ol className="flex items-center space-x-2 overflow-x-auto whitespace-nowrap">
               {breadcrumbs.map((item, index) => (
                 <li key={index} className="flex items-center">
-                  {index > 0 && <ChevronRight className="w-4 h-4 text-gray-400 mx-2" />}
+                  {index > 0 && <ChevronRight className="w-4 h-4 text-muted-foreground mx-2" />}
                   {index === breadcrumbs.length - 1 ? (
-                    <span className="text-gray-600">{item.label}</span>
+                    <span className="text-muted-foreground">{item.label}</span>
                   ) : (
-                    <Link href={item.href} className={`${theme === 'dark' ? 'text-white hover:text-gray-300' : 'text-black hover:text-gray-600'} transition-colors duration-300`}>
+                    <Link href={item.href} className="hover:text-primary transition-colors duration-300">
                       {item.label}
                     </Link>
                   )}
@@ -241,18 +232,19 @@ export default function Vessel({ children }: VesselProps) {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className={`${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-white text-black'} w-80 h-full p-6 shadow-lg overflow-y-auto flex flex-col`}
+              className="w-80 h-full p-6 shadow-lg overflow-y-auto flex flex-col bg-background"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold">Settings</h2>
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={handleToggleSettings}
-                  className={`${theme === 'dark' ? 'text-white hover:text-gray-300' : 'text-black hover:text-gray-600'} transition-colors duration-300`}
                   aria-label="Close settings"
                 >
                   <X className="w-6 h-6" />
-                </button>
+                </Button>
               </div>
               <div className="flex-grow">
                 {activeSection === 'main' && (
@@ -264,14 +256,14 @@ export default function Vessel({ children }: VesselProps) {
                         animate="visible"
                         custom={0}
                       >
-                        <button
-                          id="theme-toggle"
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start"
                           onClick={toggleTheme}
-                          className={`w-full ${theme === 'dark' ? 'bg-white text-black' : 'bg-black text-white'} py-3 px-4 rounded-lg hover:opacity-90 transition-all duration-300 text-lg font-semibold shadow-md flex items-center justify-center`}
                         >
-                          {theme === 'dark' ? <Sun className="mr-2" /> : <Moon className="mr-2" />}
+                          {theme === 'dark' ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
                           {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-                        </button>
+                        </Button>
                       </motion.li>
                       <motion.li
                         variants={menuItemVariants}
@@ -279,13 +271,13 @@ export default function Vessel({ children }: VesselProps) {
                         animate="visible"
                         custom={1}
                       >
-                        <button
-                          id="my-vehicles-button"
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start"
                           onClick={handleMyVehicles}
-                          className={`w-full ${theme === 'dark' ? 'bg-white text-black' : 'bg-black text-white'} py-3 px-4 rounded-lg hover:opacity-90 transition-all duration-300 text-lg font-semibold shadow-md`}
                         >
                           My Vehicles
-                        </button>
+                        </Button>
                       </motion.li>
                       <motion.li
                         variants={menuItemVariants}
@@ -293,14 +285,14 @@ export default function Vessel({ children }: VesselProps) {
                         animate="visible"
                         custom={2}
                       >
-                        <button
-                          id="feedback-button"
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start"
                           onClick={() => setActiveSection('feedback')}
-                          className={`w-full ${theme === 'dark' ? 'bg-white text-black' : 'bg-black text-white border border-gray-200'} py-3 px-4 rounded-lg hover:opacity-90 transition-all duration-300 text-lg font-semibold shadow-md flex items-center justify-center`}
                         >
-                          <MessageSquare className="mr-2" />
+                          <MessageSquare className="mr-2 h-4 w-4" />
                           Leave Feedback
-                        </button>
+                        </Button>
                       </motion.li>
                     </motion.ul>
                   </nav>
@@ -312,40 +304,45 @@ export default function Vessel({ children }: VesselProps) {
                     transition={{ duration: 0.3 }}
                   >
                     <div className="space-y-4">
-                      <button
+                      <Button
+                        variant="link"
+                        className="p-0"
                         onClick={() => setActiveSection('main')}
-                        className={`${theme === 'dark' ? 'text-white hover:text-gray-300' : 'text-black hover:text-gray-600'} transition-colors  duration-300 flex items-center`}
                       >
                         <ChevronLeft className="w-4 h-4 mr-1" />
                         Back to Settings
-                      </button>
+                      </Button>
                       {savedVehicles.map((vehicle, index) => (
-                        <div key={index} className={`${theme === 'dark' ? 'bg-gray-800' :    'bg-gray-100'} rounded-lg shadow-md p-4`}>
-                          <div className="flex justify-between items-center  mb-2">
-                            <button
-                              className="text-left flex-grow"
-                              onClick={() => handleSelectVehicle(vehicle)}
-                            >
-                              <h3  className="text-lg font-semibold">{vehicle.make} {vehicle.model}</h3>
-                              <p className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>{vehicle.year}</p>
-                            </button>
-                            <button
-                              onClick={() => handleDeleteVehicle(index)}
-                              className="text-red-500 hover:text-red-700"
-                              aria-label="Delete vehicle"
-                            >
-                              <X className="w-5 h-5" />
-                            </button>
-                          </div>
-                        </div>
+                        <Card key={index}>
+                          <CardContent className="p-4">
+                            <div className="flex justify-between items-center">
+                              <Button
+                                variant="ghost"
+                                className="text-left flex-grow p-0"
+                                onClick={() => handleSelectVehicle(vehicle)}
+                              >
+                                <h3 className="text-lg font-semibold">{vehicle.make} {vehicle.model}</h3>
+                                <p className="text-sm text-muted-foreground">{vehicle.year}</p>
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDeleteVehicle(index)}
+                                className="text-destructive"
+                              >
+                                <X className="w-5 h-5" />
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
                       ))}
-                      <button
-                        className={`w-full ${theme === 'dark' ?   'bg-white text-black hover:bg-gray-200' : 'bg-black text-white hover:bg-gray-800'} font-bold py-3 px-6 rounded-lg text-xl shadow-lg transition-all duration-300 ease-in-out flex items-center justify-center`}
+                      <Button
+                        className="w-full"
                         onClick={handleAddVehicle}
                       >
                         <Plus className="w-5 h-5 mr-2" />
                         Add New Vehicle
-                      </button>
+                      </Button>
                     </div>
                   </motion.div>
                 )}
@@ -356,54 +353,56 @@ export default function Vessel({ children }: VesselProps) {
                     transition={{ duration: 0.3 }}
                   >
                     <div className="space-y-4">
-                      <button
+                      <Button
+                        variant="link"
+                        className="p-0"
                         onClick={() => setActiveSection('main')}
-                        className={`${theme === 'dark' ? 'text-white hover:text-gray-300' : 'text-black hover:text-gray-600'} transition-colors duration-300 flex items-center`}
                       >
                         <ChevronLeft className="w-4 h-4 mr-1" />
                         Back to Settings
-                      </button>
+                      </Button>
                       <h3 className="text-xl font-bold">Leave Feedback</h3>
-                      <form onSubmit={handleFeedbackSubmit}>
-                        <div className="mb-4">
-                          <label className={`block ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'} mb-2`}>Feedback Type</label>
-                          <select
-                            value={feedbackType}
-                            onChange={(e) => setFeedbackType(e.target.value)}
-                            className={`w-full ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-black'} border ${theme === 'dark' ? 'border-gray-600' : 'border-gray-300'} rounded-md p-2`}
-                          >
-                            <option value="issue">Report an Issue</option>
-                            <option value="vehicle">Request a Vehicle</option>
-                          </select>
+                      <form onSubmit={handleFeedbackSubmit} className="space-y-4">
+                        <div>
+                          <Label htmlFor="feedbackType">Feedback Type</Label>
+                          <Select value={feedbackType} onValueChange={setFeedbackType}>
+                            <SelectTrigger >
+                              <SelectValue placeholder="Select feedback type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="issue">Report an Issue</SelectItem>
+                              <SelectItem value="vehicle">Request a Vehicle</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
-                        <textarea
-                          value={feedback}
-                          onChange={(e) => setFeedback(e.target.value)}
-                          className={`w-full ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-black'} border ${theme === 'dark' ? 'border-gray-600' : 'border-gray-300'} rounded-md p-2 mb-4`}
-                          rows={4}
-                          placeholder={feedbackType === 'issue' ? "Describe the issue you've encountered..." : "Describe the vehicle you'd like us to add..."}
-                          required
-                        />
-                        <button
-                          type="submit"
-                          className={`w-full ${theme === 'dark' ? 'bg-white text-black hover:bg-gray-200' : 'bg-black text-white hover:bg-gray-800'} py-2 rounded-md transition-colors duration-300`}
-                          disabled={isSubmitting}
-                        >
+                        <div>
+                          <Label htmlFor="feedback">Feedback</Label>
+                          <Textarea
+                            id="feedback"
+                            value={feedback}
+                            onChange={(e) => setFeedback(e.target.value)}
+                            rows={4}
+                            placeholder={feedbackType === 'issue' ? "Describe the issue you've encountered..." : "Describe the vehicle you'd like us to add..."}
+                            required
+                          />
+                        </div>
+                        <Button type="submit" className="w-full" disabled={isSubmitting}>
                           {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
-                        </button>
+                        </Button>
                       </form>
                     </div>
                   </motion.div>
                 )}
               </div>
               <div className="mt-auto pt-4">
-                <button
+                <Button
+                  variant="link"
+                  className="w-full text-xs"
                   onClick={handleLegalInfo}
-                  className={`w-full text-xs ${theme === 'dark' ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-800'} transition-colors duration-300 flex items-center justify-center`}
                 >
                   <FileText className="w-3 h-3 mr-1" />
                   Legal Information
-                </button>
+                </Button>
               </div>
             </motion.div>
           </motion.div>
