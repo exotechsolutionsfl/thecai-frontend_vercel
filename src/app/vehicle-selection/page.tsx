@@ -17,13 +17,14 @@ interface SelectDropdownProps {
   value: string
   onChange: (value: string) => void
   loading: boolean
+  disabled?: boolean
 }
 
-function SelectDropdown({ label, options, value, onChange, loading }: SelectDropdownProps) {
+function SelectDropdown({ label, options, value, onChange, loading, disabled }: SelectDropdownProps) {
   return (
     <div className="space-y-2">
       <Label htmlFor={label}>{label}</Label>
-      <Select value={value} onValueChange={onChange} disabled={loading}>
+      <Select value={value} onValueChange={onChange} disabled={disabled || loading}>
         <SelectTrigger id={label} className="w-full">
           <SelectValue placeholder={`Select ${label}`} />
         </SelectTrigger>
@@ -177,7 +178,7 @@ export default function VehicleSelection() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4 overflow-hidden">
       <Card className="w-full max-w-md">
         <CardContent className="pt-6">
           <h1 className="text-2xl font-bold mb-6 text-center">Select Your Vehicle</h1>
@@ -190,9 +191,10 @@ export default function VehicleSelection() {
               loading={loading.makes}
             />
 
-            <AnimatePresence>
+            <AnimatePresence mode="wait">
               {selectedMake && (
                 <motion.div
+                  key="model"
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
@@ -204,14 +206,16 @@ export default function VehicleSelection() {
                     value={selectedModel}
                     onChange={handleModelChange}
                     loading={loading.models}
+                    disabled={!selectedMake}
                   />
                 </motion.div>
               )}
             </AnimatePresence>
 
-            <AnimatePresence>
+            <AnimatePresence mode="wait">
               {selectedModel && (
                 <motion.div
+                  key="year"
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
@@ -223,14 +227,16 @@ export default function VehicleSelection() {
                     value={selectedYear}
                     onChange={handleYearChange}
                     loading={loading.years}
+                    disabled={!selectedModel}
                   />
                 </motion.div>
               )}
             </AnimatePresence>
 
-            <AnimatePresence>
+            <AnimatePresence mode="wait">
               {selectedYear && (
                 <motion.div
+                  key="buttons"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 20 }}
@@ -240,7 +246,7 @@ export default function VehicleSelection() {
                   <Button
                     onClick={handleContinue}
                     className="flex-1"
-                    disabled={loading.vehicleType}
+                    disabled={loading.vehicleType || !selectedYear}
                   >
                     {loading.vehicleType ? (
                       <Loader2 className="w-4 h-4 animate-spin mr-2" />
@@ -250,7 +256,7 @@ export default function VehicleSelection() {
                   <Button
                     onClick={handleSaveVehicle}
                     variant="outline"
-                    disabled={isSaved}
+                    disabled={isSaved || !selectedYear}
                   >
                     {isSaved ? (
                       <Check className="w-4 h-4 text-green-500" />
