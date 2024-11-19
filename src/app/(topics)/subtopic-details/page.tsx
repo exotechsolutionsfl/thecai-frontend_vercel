@@ -171,6 +171,14 @@ export default function SubtopicDetails() {
     router.push(`/subtopics-menu?make=${make}&model=${model}&year=${year}&mainTopic=${mainTopic}&nestedTopic=${nestedTopic}`)
   }
 
+  const handleZoomIn = () => {
+    setZoomLevel(prev => Math.min(3, prev + 0.1))
+  }
+
+  const handleZoomOut = () => {
+    setZoomLevel(prev => Math.max(0.5, prev - 0.1))
+  }
+
   const AdSpace = ({ side }: { side: 'left' | 'right' }) => (
     <div className={`hidden lg:flex flex-col items-center justify-start h-full w-full max-w-xs border-2 rounded-lg p-4 ${side === 'left' ? 'mr-4' : 'ml-4'}`}>
       <p className="text-sm text-muted-foreground">Ad Space</p>
@@ -283,17 +291,20 @@ export default function SubtopicDetails() {
             <motion.img
               src={selectedImage}
               alt="Selected image"
-              className="max-w-full max-h-full object-contain"
+              className="max-w-[90%] max-h-[90%] object-contain"
               style={{ transform: `scale(${zoomLevel})` }}
               initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
+              animate={{ scale: zoomLevel }}
               transition={{ duration: 0.3 }}
             />
             <Button
               variant="ghost"
               size="icon"
-              className="absolute top-4 right-4"
-              onClick={() => setSelectedImage(null)}
+              className="absolute top-4 right-4 text-foreground"
+              onClick={() => {
+                setSelectedImage(null)
+                setZoomLevel(1)
+              }}
             >
               <X className="w-6 h-6" />
             </Button>
@@ -301,14 +312,14 @@ export default function SubtopicDetails() {
               <Button
                 variant="outline"
                 size="icon"
-                onClick={() => setZoomLevel(prev => Math.max(0.5, prev - 0.1))}
+                onClick={handleZoomOut}
               >
                 <ZoomOut className="w-4 h-4" />
               </Button>
               <Button
                 variant="outline"
                 size="icon"
-                onClick={() => setZoomLevel(prev => Math.min(3, prev + 0.1))}
+                onClick={handleZoomIn}
               >
                 <ZoomIn className="w-4 h-4" />
               </Button>
