@@ -6,7 +6,6 @@ import { Folder, ChevronRight } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { apiFetch } from '@api/api'
 import Loading from '@/components/loading'
-import { useTheme } from '@/context/ThemeProvider'
 import HierarchicalSearch from '@/components/hierarchical-search'
 import { Card, CardContent } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
@@ -25,7 +24,6 @@ interface SearchResult {
 export default function MainTopicsPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const { theme } = useTheme()
 
   const make = searchParams.get('make') || ''
   const model = searchParams.get('model') || ''
