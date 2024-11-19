@@ -8,6 +8,8 @@ import { apiFetch } from '@api/api'
 import Loading from '@/components/loading'
 import { useTheme } from '@/context/ThemeProvider'
 import HierarchicalSearch from '@/components/hierarchical-search'
+import { Card, CardContent } from "@/components/ui/Card"
+import { Button } from "@/components/ui/Button"
 
 interface Topic {
   name: string
@@ -72,27 +74,22 @@ export default function MainTopicsPage() {
   }
 
   const AdSpace = ({ side }: { side: 'left' | 'right' }) => (
-    <div className={`hidden lg:flex flex-col items-center justify-start h-full w-full max-w-xs ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'} border-2 rounded-lg p-4 ${side === 'left' ? 'mr-4' : 'ml-4'}`}>
-      <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Ad Space</p>
+    <div className={`hidden lg:flex flex-col items-center justify-start h-full w-full max-w-xs border-2 rounded-lg p-4 ${side === 'left' ? 'mr-4' : 'ml-4'}`}>
+      <p className="text-sm text-muted-foreground">Ad Space</p>
     </div>
   )
-
-  const fadeInVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1 }
-  }
 
   if (isLoading) {
     return <Loading message="Loading topics..." />
   }
 
   return (
-    <div className={`min-h-screen ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}>
-      <div className="flex justify-center p-4">
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-center">
         <div className="w-full max-w-screen-2xl flex">
           <AdSpace side="left" />
           <div className="flex-grow px-4">
-            <div className="relative z-50">
+            <div className="mb-6">
               <HierarchicalSearch
                 onSelect={handleSearchResult}
                 placeholder={`Search topics for ${make} ${model} ${year}...`}
@@ -105,51 +102,47 @@ export default function MainTopicsPage() {
             <AnimatePresence mode="wait">
               {error ? (
                 <motion.div
-                  className="text-red-500 text-center mt-6"
-                  variants={fadeInVariants}
-                  initial="hidden"
-                  animate="visible"
-                  exit="hidden"
+                  className="text-destructive text-center mt-6"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
                   transition={{ duration: 0.3 }}
                 >
                   {error}
                 </motion.div>
               ) : (
                 <motion.div
-                  className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-6"
-                  variants={fadeInVariants}
-                  initial="hidden"
-                  animate="visible"
-                  exit="hidden"
+                  className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
                   transition={{ duration: 0.3 }}
                 >
                   {topics.length > 0 ? (
                     topics.map((topic) => (
-                      <motion.div
-                        key={topic.name}
-                        className={`${theme === 'dark' ? 'bg-gray-800 border-gray-700 hover:bg-gray-700' : 'bg-white border-gray-200 hover:bg-gray-50'} border rounded-lg shadow-md p-4 cursor-pointer transition-colors duration-300`}
-                        variants={fadeInVariants}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => handleTopicSelect(topic.name)}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
-                            <Folder className={`w-6 h-6 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`} />
-                            <h2 className={`text-lg font-semibold ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
-                              {topic.name}
-                            </h2>
-                          </div>
-                          <ChevronRight className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`} />
-                        </div>
+                      <motion.div key={topic.name} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                        <Card>
+                          <CardContent className="p-4">
+                            <Button
+                              variant="ghost"
+                              className="w-full justify-between text-left"
+                              onClick={() => handleTopicSelect(topic.name)}
+                            >
+                              <div className="flex items-center space-x-3">
+                                <Folder className="w-5 h-5" />
+                                <span className="text-lg font-semibold">{topic.name}</span>
+                              </div>
+                              <ChevronRight className="w-5 h-5" />
+                            </Button>
+                          </CardContent>
+                        </Card>
                       </motion.div>
                     ))
                   ) : (
                     <motion.div
-                      className={`col-span-full text-center ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}
-                      variants={fadeInVariants}
-                      initial="hidden"
-                      animate="visible"
+                      className="col-span-full text-center text-muted-foreground"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
                       transition={{ duration: 0.3 }}
                     >
                       No main topics found for the selected vehicle. Please try a different search or contact support.
