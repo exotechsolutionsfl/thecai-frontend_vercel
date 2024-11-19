@@ -5,11 +5,13 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Search, AlertTriangle, ZoomIn, ZoomOut, X, ChevronLeft } from 'lucide-react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { apiFetch } from '@api/api'
-import { useTheme } from '@context/ThemeProvider'
 import { debounce } from '@/lib/utils'
 import PageTabs from '@/components/PageTabs'
 import ChunkRenderer from '@/components/ChunkRenderer'
-import Loading from '@components/loading'
+import Loading from '@/components/loading'
+import { Button } from "@/components/ui/Button"
+import { Card, CardContent } from "@/components/ui/Card"
+import { Input } from "@/components/ui/Input"
 
 interface ChunkText {
   page_number: number
@@ -36,7 +38,6 @@ interface RecentSearch {
 export default function SubtopicDetails() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const { theme } = useTheme()
 
   const subtopic = searchParams.get('subtopic') || ''
   const mainTopic = searchParams.get('mainTopic') || ''
@@ -171,12 +172,8 @@ export default function SubtopicDetails() {
   }
 
   const AdSpace = ({ side }: { side: 'left' | 'right' }) => (
-    <div
-      className={`hidden lg:flex flex-col items-center justify-start  h-full w-full max-w-xs ${
-        theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
-      } border-2 rounded-lg p-4 ${side === 'left' ? 'mr-4' : 'ml-4'}`}
-    >
-      {/* Empty div to maintain structure */}
+    <div className={`hidden lg:flex flex-col items-center justify-start h-full w-full max-w-xs border-2 rounded-lg p-4 ${side === 'left' ? 'mr-4' : 'ml-4'}`}>
+      <p className="text-sm text-muted-foreground">Ad Space</p>
     </div>
   )
 
@@ -185,49 +182,31 @@ export default function SubtopicDetails() {
   }
 
   return (
-    <div
-      className={`relative min-h-screen ${
-        theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-white text-black'
-      } font-sans`}
-    >
-      <div className="flex justify-center p-4">
-        <div className="w-full  max-w-screen-2xl flex">
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-center">
+        <div className="w-full max-w-screen-2xl flex">
           <AdSpace side="left" />
           <div className="flex-grow px-4">
             <div className="mb-4">
-              <button
+              <Button
+                variant="ghost"
+                className="flex items-center text-primary"
                 onClick={handleBackToTopics}
-                className={`flex items-center ${
-                  theme === 'dark'
-                    ? 'text-blue-400 hover:text-blue-300'
-                    : 'text-blue-600 hover:text-blue-800'
-                } transition-colors duration-200`}
               >
                 <ChevronLeft className="w-5 h-5 mr-1" />
                 Back to Topics
-              </button>
+              </Button>
             </div>
-            <motion.div
-              className="mb-6 relative"
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: 0.2 }}
-            >
-              <input
+            <div className="mb-6 relative">
+              <Input
                 type="text"
                 placeholder={`Search within ${subtopic}...`}
-                className={`w-full p-3 pl-10 rounded-lg ${
-                  theme === 'dark'
-                    ? 'bg-gray-800 border-gray-700 text-white'
-                    : 'bg-white border-gray-300 text-black'
-                } focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary`}
+                className="w-full pl-10"
                 value={searchTerm}
                 onChange={handleSearchChange}
               />
-              <Search
-                className={`absolute left-3 top-3 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}
-              />
-            </motion.div>
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+            </div>
 
             <PageTabs
               debouncedSearchTerm={debouncedSearchTerm}
@@ -245,20 +224,24 @@ export default function SubtopicDetails() {
               {error ? (
                 <motion.div
                   key="error"
-                  className="text-center mb-4 text-red-500"
+                  className="text-center mb-4 text-destructive"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.5 }}
                 >
-                  <div className="flex flex-col items-center justify-center">
-                    <AlertTriangle className="w-12 h-12 mb-4" />
-                    <h2 className="text-xl font-bold mb-2">Error</h2>
-                    <p className="mb-4">{error}</p>
-                    <p className="mb-4">
-                      There was an issue fetching the content. Please contact support if the error persists.
-                    </p>
-                  </div>
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="flex flex-col items-center justify-center">
+                        <AlertTriangle className="w-12 h-12 mb-4 text-destructive" />
+                        <h2 className="text-xl font-bold mb-2">Error</h2>
+                        <p className="mb-4">{error}</p>
+                        <p className="mb-4">
+                          There was an issue fetching the content. Please contact support if the error persists.
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </motion.div>
               ) : filteredChunks.length > 0 ? (
                 filteredChunks
@@ -274,7 +257,7 @@ export default function SubtopicDetails() {
               ) : (
                 <motion.div
                   key="no-results"
-                  className={`text-center mb-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}
+                  className="text-center mb-4 text-muted-foreground"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
@@ -291,7 +274,7 @@ export default function SubtopicDetails() {
 
       {selectedImage && (
         <motion.div
-          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
+          className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -306,25 +289,29 @@ export default function SubtopicDetails() {
               animate={{ scale: 1 }}
               transition={{ duration: 0.3 }}
             />
-            <button
-              className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors duration-300"
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-4 right-4"
               onClick={() => setSelectedImage(null)}
             >
-              <X className="w-8 h-8" />
-            </button>
+              <X className="w-6 h-6" />
+            </Button>
             <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-4">
-              <button
-                className="bg-white text-black rounded-full p-2 hover:bg-gray-200 transition-colors duration-300"
+              <Button
+                variant="outline"
+                size="icon"
                 onClick={() => setZoomLevel(prev => Math.max(0.5, prev - 0.1))}
               >
-                <ZoomOut className="w-6 h-6" />
-              </button>
-              <button
-                className="bg-white text-black rounded-full p-2 hover:bg-gray-200 transition-colors duration-300"
+                <ZoomOut className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
                 onClick={() => setZoomLevel(prev => Math.min(3, prev + 0.1))}
               >
-                <ZoomIn className="w-6 h-6" />
-              </button>
+                <ZoomIn className="w-4 h-4" />
+              </Button>
             </div>
           </div>
         </motion.div>
