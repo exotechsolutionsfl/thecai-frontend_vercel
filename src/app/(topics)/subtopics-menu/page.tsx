@@ -2,17 +2,18 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, FileText } from 'lucide-react'
+import { Search, FileText, ChevronRight } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { apiFetch } from '@api/api'
-import { useTheme } from '@context/ThemeProvider'
 import { debounce } from '@/lib/utils'
-import Loading from '@components/loading'
+import Loading from '@/components/loading'
+import { Button } from "@/components/ui/Button"
+import { Card, CardContent } from "@/components/ui/Card"
+import { Input } from "@/components/ui/Input"
 
 export default function SubtopicsMenu() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const { theme } = useTheme()
 
   const make = searchParams.get('make') || ''
   const model = searchParams.get('model') || ''
@@ -128,104 +129,95 @@ export default function SubtopicsMenu() {
   }
 
   const AdSpace = ({ side }: { side: 'left' | 'right' }) => (
-    <div className={`hidden lg:flex flex-col items-center justify-start h-full w-full max-w-xs ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'} border-2 rounded-lg p-4 ${side === 'left' ? 'mr-4' : 'ml-4'}`}>
-      {/* Empty div to maintain structure */}
+    <div className={`hidden lg:flex flex-col items-center justify-start h-full w-full max-w-xs border-2 rounded-lg p-4 ${side === 'left' ? 'mr-4' : 'ml-4'}`}>
+      <p className="text-sm text-muted-foreground">Ad Space</p>
     </div>
   )
 
-  const fadeInVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1 }
-  }
-
   return (
-    <div className={`relative min-h-screen ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-white text-black'} font-sans`}>
-      <div className="flex justify-center p-4">
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-center">
         <div className="w-full max-w-screen-2xl flex">
           <AdSpace side="left" />
           <div className="flex-grow px-4">
-            <motion.div
-              className="mb-6 relative"
-              variants={fadeInVariants}
-              initial="hidden"
-              animate="visible"
-              transition={{ duration: 0.3 }}
-            >
-              <input
+            <div className="mb-6 relative">
+              <Input
                 type="text"
                 placeholder="Search..."
-                className={`w-full p-3 pl-10 rounded-lg ${theme === 'dark' ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300 text-black'} focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary`}
+                className="w-full pl-10"
                 value={searchTerm}
                 onChange={handleSearchChange}
               />
-              <Search className={`absolute left-3 top-3 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`} />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
               {suggestions.length > 0 && searchTerm && filteredSubtopics.length === 0 && (
-                <motion.div
-                  className={`absolute z-10 mt-1 w-full ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-300'} border rounded-lg shadow-lg`}
-                  variants={fadeInVariants}
-                  initial="hidden"
-                  animate="visible"
-                  transition={{ duration: 0.3 }}
-                >
-                  <p className={`px-4 py-2 text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Did you mean:</p>
-                  {suggestions.map((suggestion, index) => (
-                    <button
-                      key={index}
-                      className={`block w-full text-left px-4 py-2  ${theme === 'dark' ? 'text-white hover:bg-gray-700' : 'text-black hover:bg-gray-100'} focus:outline-none focus:bg-primary-focus`}
-                      onClick={() => setSearchTerm(suggestion)}
-                    >
-                      {suggestion}
-                    </button>
-                  ))}
-                </motion.div>
+                <Card className="mt-1">
+                  <CardContent className="p-2">
+                    <p className="text-sm text-muted-foreground px-2 py-1">Did you mean:</p>
+                    {suggestions.map((suggestion, index) => (
+                      <Button
+                        key={index}
+                        variant="ghost"
+                        className="w-full justify-start text-left px-2 py-1"
+                        onClick={() => setSearchTerm(suggestion)}
+                      >
+                        {suggestion}
+                      </Button>
+                    ))}
+                  </CardContent>
+                </Card>
               )}
-            </motion.div>
+            </div>
 
             <AnimatePresence mode="wait">
               {error ? (
                 <motion.div
-                  className="text-red-500 text-center"
-                  variants={fadeInVariants}
-                  initial="hidden"
-                  animate="visible"
-                  exit="hidden"
+                  className="text-destructive text-center"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
                   transition={{ duration: 0.3 }}
                 >
                   {error}
                 </motion.div>
               ) : (
                 <motion.div
-                  className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"
-                  variants={fadeInVariants}
-                  initial="hidden"
-                  animate="visible"
-                  exit="hidden"
+                  className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
                   transition={{ duration: 0.3 }}
                 >
                   {filteredSubtopics.length > 0 ? (
                     filteredSubtopics.map((subtopic) => (
                       <motion.div
                         key={subtopic}
-                        className={`${theme === 'dark' ? 'bg-gray-800 border-gray-700 hover:bg-gray-700' : 'bg-white border-gray-200 hover:bg-gray-50'} border rounded-lg shadow-md p-4 cursor-pointer transition-colors duration-300`}
-                        variants={fadeInVariants}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => handleSubtopicSelect(subtopic)}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
                       >
-                        <div className="flex items-center space-x-3">
-                          <FileText className={`w-6 h-6 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`} />
-                          <h2 className={`text-lg font-semibold ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
-                            {highlightText(subtopic, debouncedSearchTerm)}
-                          </h2>
-                        </div>
+                        <Card>
+                          <CardContent className="p-4">
+                            <Button
+                              variant="ghost"
+                              className="w-full justify-between text-left h-auto py-3"
+                              onClick={() => handleSubtopicSelect(subtopic)}
+                            >
+                              <div className="flex items-center space-x-3 overflow-hidden">
+                                <FileText className="w-5 h-5 flex-shrink-0" />
+                                <span className="text-base font-semibold line-clamp-2">
+                                  {highlightText(subtopic, debouncedSearchTerm)}
+                                </span>
+                              </div>
+                              <ChevronRight className="w-5 h-5 flex-shrink-0" />
+                            </Button>
+                          </CardContent>
+                        </Card>
                       </motion.div>
                     ))
                   ) : (
                     <motion.div
-                      className={`col-span-full text-center ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}
-                      variants={fadeInVariants}
-                      initial="hidden"
-                      animate="visible"
+                      className="col-span-full text-center text-muted-foreground"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
                       transition={{ duration: 0.3 }}
                     >
                       No subtopics found for the current search.
