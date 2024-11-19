@@ -1,22 +1,30 @@
-import React, { forwardRef } from 'react'
+import * as React from "react"
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+import { cn } from "@/lib/utils"
+
+export interface InputProps
+  extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string
 }
 
-export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ className, label, ...props }, ref) => {
+const Input = React.forwardRef<HTMLInputElement, InputProps>(
+  ({ className, type, label, ...props }, ref) => {
     return (
       <div className="w-full">
         {label && (
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            htmlFor={props.id}
+          >
             {label}
           </label>
         )}
         <input
-          className={`w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-            props.disabled ? 'opacity-50 cursor-not-allowed' : ''
-          } ${className}`}
+          type={type}
+          className={cn(
+            "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+            className
+          )}
           ref={ref}
           {...props}
         />
@@ -24,5 +32,6 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     )
   }
 )
+Input.displayName = "Input"
 
-Input.displayName = 'Input'
+export { Input }

@@ -44,24 +44,13 @@ const retryFetch = async (url: string, options = {}, maxRetries = 3) => {
   }
 }
 
-const groupMessages = (messages: State['chatHistory']) => {
-  return messages.reduce((acc, message, index, array) => {
-    if (index === 0 || message.role !== array[index - 1].role) {
-      acc.push([message]);
-    } else {
-      acc[acc.length - 1].push(message);
-    }
-    return acc;
-  }, [] as State['chatHistory'][]);
-}
-
 interface ChatInterfaceProps {
   state: State
   dispatch: React.Dispatch<Action>
 }
 
 interface FeedbackSectionProps {
-  group: State['chatHistory'][0]
+  message: State['chatHistory'][0]
   toggleFeedback: (index: number) => void
   handleStarClick: (index: number, rating: number) => void
   submitFeedback: (index: number) => Promise<void>
@@ -69,15 +58,15 @@ interface FeedbackSectionProps {
   dispatch: React.Dispatch<Action>
 }
 
-const FeedbackSection: React.FC<FeedbackSectionProps> = ({ group, toggleFeedback, handleStarClick, submitFeedback, state, dispatch }) => {
+const FeedbackSection: React.FC<FeedbackSectionProps> = ({ message, toggleFeedback, handleStarClick, submitFeedback, state, dispatch }) => {
   return (
     <div className="mt-2">
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => toggleFeedback(state.chatHistory.findIndex(msg => msg.content === group.content))}
+        onClick={() => toggleFeedback(state.chatHistory.findIndex(msg => msg.content === message.content))}
       >
-        {group.showFeedback ? (
+        {message.showFeedback ? (
           <>
             <ChevronUp className="w-4 h-4 mr-1" />
             Hide Feedback
@@ -90,7 +79,7 @@ const FeedbackSection: React.FC<FeedbackSectionProps> = ({ group, toggleFeedback
         )}
       </Button>
       <AnimatePresence>
-        {group.showFeedback && (
+        {message.showFeedback && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
@@ -107,11 +96,11 @@ const FeedbackSection: React.FC<FeedbackSectionProps> = ({ group, toggleFeedback
                   key={star}
                   variant="ghost"
                   size="sm"
-                  onClick={() => handleStarClick(state.chatHistory.findIndex(msg => msg.content === group.content), star)}
+                  onClick={() => handleStarClick(state.chatHistory.findIndex(msg => msg.content === message.content), star)}
                 >
                   <Star
                     className={`w-6 h-6 ${
-                      star <= (group.rating || 0)
+                      star <= (message.rating || 0)
                         ? 'text-yellow-400 fill-yellow-400'
                         : 'text-gray-300'
                     }`}
@@ -127,19 +116,19 @@ const FeedbackSection: React.FC<FeedbackSectionProps> = ({ group, toggleFeedback
                 dispatch({
                   type: 'SET_CHAT_HISTORY',
                   payload: state.chatHistory.map((msg, i) =>
-                    i === state.chatHistory.findIndex(msg => msg.content === group.content
+                    i === state.chatHistory.findIndex(msg => msg.content === message.content
                     ) ? { ...msg, comments: e.target.value } : msg
                   ),
                 });
               }}
             />
-            {group.rating && !group.feedbackSubmitted && (
+            {message.rating && !message.feedbackSubmitted && (
               <Button
-                onClick={() => submitFeedback(state.chatHistory.findIndex(msg => msg.content === group.content))}
-                disabled={group.feedbackLoading}
+                onClick={() => submitFeedback(state.chatHistory.findIndex(msg => msg.content === message.content))}
+                disabled={message.feedbackLoading}
                 className="w-full"
               >
-                {group.feedbackLoading ? (
+                {message.feedbackLoading ? (
                   <Settings className="w-5 h-5 animate-spin mx-auto" />
                 ) : (
                   'Submit Feedback'
@@ -147,7 +136,7 @@ const FeedbackSection: React.FC<FeedbackSectionProps> = ({ group, toggleFeedback
               </Button>
             )}
             <AnimatePresence>
-              {group.feedbackError && (
+              {message.feedbackError && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -155,7 +144,7 @@ const FeedbackSection: React.FC<FeedbackSectionProps> = ({ group, toggleFeedback
                   transition={{ duration: 0.3 }}
                 >
                   <Alert variant="destructive" className="mt-2">
-                    <AlertDescription>{group.feedbackError}</AlertDescription>
+                    <AlertDescription>{message.feedbackError}</AlertDescription>
                   </Alert>
                 </motion.div>
               )}
@@ -342,37 +331,34 @@ const Component: React.FC<ChatInterfaceProps> = ({ state, dispatch }) => {
         >
           <div className="max-w-5xl mx-auto px-4 py-6">
             <AnimatePresence>
-              {groupMessages(state.chatHistory).map((group, groupIndex) => (
+              {state.chatHistory.map((message, index) => (
                 <motion.div
-                  key={groupIndex}
+                  key={index}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.3, delay: groupIndex * 0.1 }}
+                  transition={{ duration: 0.3, delay: index * 0.1 }}
                   className="mb-6"
                 >
-                  {group.map((message, messageIndex) => (
-                    <motion.div
-                      key={messageIndex}
-                      initial={{ opacity: 0, x: message.role === 'user' ? 20 : -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.3, delay: messageIndex * 0.1 }}
-                      className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-2`}
+                  <motion.div
+                    initial={{ opacity: 0, x: message.role === 'user' ? 20 : -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-2`}
+                  >
+                    <div
+                      className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+                        message.role === 'user'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-secondary text-secondary-foreground'
+                      }`}
                     >
-                      <div
-                        className={`max-w-[85%] rounded-2xl px-4 py-3 ${
-                          message.role === 'user'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-secondary text-secondary-foreground'
-                        }`}
-                      >
-                        {message.content}
-                      </div>
-                    </motion.div>
-                  ))}
-                  {group[0].role === 'assistant' && !group[0].feedbackSubmitted && (
+                      {message.content}
+                    </div>
+                  </motion.div>
+                  {message.role === 'assistant' && !message.feedbackSubmitted && (
                     <FeedbackSection
-                      group={group[0]}
+                      message={message}
                       toggleFeedback={toggleFeedback}
                       handleStarClick={handleStarClick}
                       submitFeedback={submitFeedback}
@@ -381,7 +367,7 @@ const Component: React.FC<ChatInterfaceProps> = ({ state, dispatch }) => {
                     />
                   )}
                   <AnimatePresence>
-                    {group[0].feedbackSubmitted && group[0].feedbackSuccess && (
+                    {message.feedbackSubmitted && message.feedbackSuccess && (
                       <motion.div
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
