@@ -5,9 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Search, Folder, ChevronRight } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { apiFetch } from '@api/api'
-import Loading from '@components/loading'
-import { Card, CardContent } from "@/components/ui/Card"
+import Loading from '@/components/loading'
 import { Button } from "@/components/ui/Button"
+import { Card, CardContent } from "@/components/ui/Card"
 import { Input } from "@/components/ui/Input"
 
 export default function NestedTopics() {
@@ -127,16 +127,16 @@ export default function NestedTopics() {
             <div className="mb-6 relative">
               <Input
                 type="text"
-                placeholder="Search nested topics..."
+                placeholder="Search..."
                 className="w-full pl-10"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
               {suggestions.length > 0 && searchTerm && filteredNestedTopics.length === 0 && (
-                <Card className="absolute z-10 mt-1 w-full">
+                <Card className="mt-1">
                   <CardContent className="p-2">
-                    <p className="px-2 py-1 text-sm text-muted-foreground">Did you mean:</p>
+                    <p className="text-sm text-muted-foreground px-2 py-1">Did you mean:</p>
                     {suggestions.map((suggestion, index) => (
                       <Button
                         key={index}
@@ -173,21 +173,25 @@ export default function NestedTopics() {
                 >
                   {filteredNestedTopics.length > 0 ? (
                     filteredNestedTopics.map((nestedTopic) => (
-                      <motion.div key={nestedTopic} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                      <motion.div
+                        key={nestedTopic}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
                         <Card>
                           <CardContent className="p-4">
                             <Button
                               variant="ghost"
-                              className="w-full justify-between text-left h-auto py-2"
+                              className="w-full justify-between text-left h-auto py-3"
                               onClick={() => handleNestedTopicSelect(nestedTopic)}
                             >
-                              <div className="flex items-start space-x-3">
-                                <Folder className="w-6 h-6 flex-shrink-0 text-gray-600" />
-                                <h2 className="text-lg font-semibold break-words text-black">
+                              <div className="flex items-center space-x-3 overflow-hidden">
+                                <Folder className="w-5 h-5 flex-shrink-0" />
+                                <span className="text-base font-semibold line-clamp-2">
                                   {highlightText(nestedTopic, searchTerm)}
-                                </h2>
+                                </span>
                               </div>
-                              <ChevronRight className="w-5 h-5 flex-shrink-0 ml-2" />
+                              <ChevronRight className="w-5 h-5 flex-shrink-0" />
                             </Button>
                           </CardContent>
                         </Card>
