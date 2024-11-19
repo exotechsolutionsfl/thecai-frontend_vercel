@@ -123,14 +123,14 @@ export default function MainTopicsPage() {
                           <CardContent className="p-4">
                             <Button
                               variant="ghost"
-                              className="w-full justify-between text-left h-auto py-2"
+                              className="w-full justify-between text-left h-auto py-3"
                               onClick={() => handleTopicSelect(topic.name)}
                             >
-                              <div className="flex items-start space-x-3 overflow-hidden">
-                                <Folder className="w-5 h-5 flex-shrink-0 mt-1" />
+                              <div className="flex items-center space-x-3 overflow-hidden">
+                                <Folder className="w-5 h-5 flex-shrink-0" />
                                 <span className="text-base font-semibold line-clamp-2">{topic.name}</span>
                               </div>
-                              <ChevronRight className="w-5 h-5 flex-shrink-0 ml-2" />
+                              <ChevronRight className="w-5 h-5 flex-shrink-0" />
                             </Button>
                           </CardContent>
                         </Card>
