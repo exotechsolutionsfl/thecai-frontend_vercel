@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronRight, X, Plus, MessageSquare, ChevronLeft, Moon, Sun, FileText, Menu } from 'lucide-react'
+import { ChevronRight, X, Plus, MessageSquare, ChevronLeft, Moon, Sun, FileText, Menu, BarcodeIcon as Garage } from 'lucide-react'
 import { useSavedVehicles } from '@context/VehicleContext'
 import { useTheme } from '@context/ThemeProvider'
 import { Toaster, toast } from 'react-hot-toast'
@@ -258,7 +258,7 @@ export default function Vessel({ children }: VesselProps) {
                       >
                         <Button
                           variant="outline"
-                          className="w-full justify-start"
+                          className="w-full justify-start text-lg"
                           onClick={toggleTheme}
                         >
                           {theme === 'dark' ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
@@ -273,9 +273,10 @@ export default function Vessel({ children }: VesselProps) {
                       >
                         <Button
                           variant="outline"
-                          className="w-full justify-start"
+                          className="w-full justify-start text-lg"
                           onClick={handleMyVehicles}
                         >
+                          <Garage className="mr-2 h-5 w-5" />
                           My Vehicles
                         </Button>
                       </motion.li>
@@ -287,7 +288,7 @@ export default function Vessel({ children }: VesselProps) {
                       >
                         <Button
                           variant="outline"
-                          className="w-full justify-start"
+                          className="w-full justify-start text-lg"
                           onClick={() => setActiveSection('feedback')}
                         >
                           <MessageSquare className="mr-2 h-4 w-4" />
@@ -299,19 +300,26 @@ export default function Vessel({ children }: VesselProps) {
                 )}
                 {activeSection === 'myVehicles' && (
                   <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
                     transition={{ duration: 0.3 }}
                   >
                     <div className="space-y-4">
-                      <Button
-                        variant="link"
-                        className="p-0"
-                        onClick={() => setActiveSection('main')}
+                      <motion.div
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.3 }}
                       >
-                        <ChevronLeft className="w-4 h-4 mr-1" />
-                        Back to Settings
-                      </Button>
+                        <Button
+                          variant="link"
+                          className="p-0 text-lg"
+                          onClick={() => setActiveSection('main')}
+                        >
+                          <ChevronLeft className="w-5 h-5 mr-1" />
+                          Back to Settings
+                        </Button>
+                      </motion.div>
                       {savedVehicles.map((vehicle, index) => (
                         <Card key={index}>
                           <CardContent className="p-4">
@@ -348,19 +356,26 @@ export default function Vessel({ children }: VesselProps) {
                 )}
                 {activeSection === 'feedback' && (
                   <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
                     transition={{ duration: 0.3 }}
                   >
                     <div className="space-y-4">
-                      <Button
-                        variant="link"
-                        className="p-0"
-                        onClick={() => setActiveSection('main')}
+                      <motion.div
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.3 }}
                       >
-                        <ChevronLeft className="w-4 h-4 mr-1" />
-                        Back to Settings
-                      </Button>
+                        <Button
+                          variant="link"
+                          className="p-0 text-lg"
+                          onClick={() => setActiveSection('main')}
+                        >
+                          <ChevronLeft className="w-5 h-5 mr-1" />
+                          Back to Settings
+                        </Button>
+                      </motion.div>
                       <h3 className="text-xl font-bold">Leave Feedback</h3>
                       <form onSubmit={handleFeedbackSubmit} className="space-y-4">
                         <div>
