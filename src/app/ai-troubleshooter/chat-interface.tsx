@@ -1,9 +1,13 @@
+'use client'
+
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { useTheme } from '@/context/ThemeProvider'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Settings, Star, ChevronDown, ChevronUp, Plus, Filter, X, Send } from 'lucide-react'
-import { Alert } from "@/components/ui/Alert"
-import { Popover } from './popover'
+import { Alert, AlertDescription } from "@/components/ui/Alert"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Button } from "@/components/ui/Button"
+import { Input } from "@/components/ui/Input"
+import { Textarea } from "@/components/ui/Textarea"
 import { State, Action } from './state'
 import { apiFetch } from '@api/api'
 
@@ -58,7 +62,6 @@ interface ChatInterfaceProps {
 
 interface FeedbackSectionProps {
   group: State['chatHistory'][0]
-  theme: string
   toggleFeedback: (index: number) => void
   handleStarClick: (index: number, rating: number) => void
   submitFeedback: (index: number) => Promise<void>
@@ -66,29 +69,26 @@ interface FeedbackSectionProps {
   dispatch: React.Dispatch<Action>
 }
 
-const FeedbackSection: React.FC<FeedbackSectionProps> = ({ group, theme, toggleFeedback, handleStarClick, submitFeedback, state, dispatch }) => {
+const FeedbackSection: React.FC<FeedbackSectionProps> = ({ group, toggleFeedback, handleStarClick, submitFeedback, state, dispatch }) => {
   return (
     <div className="mt-2">
-      <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
+      <Button
+        variant="ghost"
+        size="sm"
         onClick={() => toggleFeedback(state.chatHistory.findIndex(msg => msg.content === group.content))}
-        className={`text-sm font-medium ${
-          theme === 'dark' ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-black'
-        }`}
       >
         {group.showFeedback ? (
           <>
-            <ChevronUp className="inline-block w-4 h-4 mr-1" />
+            <ChevronUp className="w-4 h-4 mr-1" />
             Hide Feedback
           </>
         ) : (
           <>
-            <ChevronDown className="inline-block w-4 h-4 mr-1" />
+            <ChevronDown className="w-4 h-4 mr-1" />
             Give Feedback
           </>
         )}
-      </motion.button>
+      </Button>
       <AnimatePresence>
         {group.showFeedback && (
           <motion.div
@@ -96,40 +96,32 @@ const FeedbackSection: React.FC<FeedbackSectionProps> = ({ group, theme, toggleF
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
-            className={`mt-2 p-4 rounded-lg ${
-              theme === 'dark' ? 'bg-gray-800' : 'bg-gray-100'
-            }`}
+            className="mt-2 p-4 rounded-lg bg-secondary"
           >
-            <h4 className={`text-lg font-medium mb-2 ${
-              theme === 'dark' ? 'text-white' : 'text-black'
-            }`}>
+            <h4 className="text-lg font-medium mb-2">
               Rate this response
             </h4>
             <div className="flex mb-4">
               {[1, 2, 3, 4, 5].map((star) => (
-                <motion.button
+                <Button
                   key={star}
-                  whileHover={{ scale: 1.2 }}
-                  whileTap={{ scale: 0.8 }}
+                  variant="ghost"
+                  size="sm"
                   onClick={() => handleStarClick(state.chatHistory.findIndex(msg => msg.content === group.content), star)}
                 >
                   <Star
-                    className={`w-6 h-6 cursor-pointer ${
+                    className={`w-6 h-6 ${
                       star <= (group.rating || 0)
-                        ? theme === 'dark' ? 'text-yellow-500 fill-yellow-500' : 'text-yellow-400 fill-yellow-400'
-                        : theme === 'dark' ? 'text-gray-600' : 'text-gray-300'
+                        ? 'text-yellow-400 fill-yellow-400'
+                        : 'text-gray-300'
                     }`}
                   />
-                </motion.button>
+                </Button>
               ))}
             </div>
-            <textarea
+            <Textarea
               placeholder="Additional comments (optional)"
-              className={`w-full p-2 rounded-lg mb-4 ${
-                theme === 'dark'
-                  ? 'bg-gray-700 text-white'
-                  : 'bg-white text-black'
-              } border border-gray-300`}
+              className="mb-4"
               rows={3}
               onChange={(e) => {
                 dispatch({
@@ -140,25 +132,19 @@ const FeedbackSection: React.FC<FeedbackSectionProps> = ({ group, theme, toggleF
                   ),
                 });
               }}
-            ></textarea>
+            />
             {group.rating && !group.feedbackSubmitted && (
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+              <Button
                 onClick={() => submitFeedback(state.chatHistory.findIndex(msg => msg.content === group.content))}
                 disabled={group.feedbackLoading}
-                className={`w-full p-2 rounded-lg font-medium transition-all duration-300 ${
-                  theme === 'dark'
-                    ? 'bg-blue-600 text-white hover:bg-blue-700'
-                    : 'bg-blue-500 text-white hover:bg-blue-600'
-                } ${group.feedbackLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className="w-full"
               >
                 {group.feedbackLoading ? (
                   <Settings className="w-5 h-5 animate-spin mx-auto" />
                 ) : (
                   'Submit Feedback'
                 )}
-              </motion.button>
+              </Button>
             )}
             <AnimatePresence>
               {group.feedbackError && (
@@ -169,7 +155,7 @@ const FeedbackSection: React.FC<FeedbackSectionProps> = ({ group, theme, toggleF
                   transition={{ duration: 0.3 }}
                 >
                   <Alert variant="destructive" className="mt-2">
-                    {group.feedbackError}
+                    <AlertDescription>{group.feedbackError}</AlertDescription>
                   </Alert>
                 </motion.div>
               )}
@@ -182,7 +168,6 @@ const FeedbackSection: React.FC<FeedbackSectionProps> = ({ group, theme, toggleF
 }
 
 const Component: React.FC<ChatInterfaceProps> = ({ state, dispatch }) => {
-  const { theme } = useTheme()
   const chatEndRef = useRef<HTMLDivElement>(null)
   const [showScrollButton, setShowScrollButton] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
@@ -217,7 +202,6 @@ const Component: React.FC<ChatInterfaceProps> = ({ state, dispatch }) => {
     const tempQuery = state.query;
     dispatch({ type: 'SET_QUERY', payload: '' });
 
-    // Show "Still working" message after 10 seconds.
     const stillWorkingTimeout = setTimeout(() => {
       dispatch({ type: 'SET_CHAT_HISTORY', payload: [...state.chatHistory, userMessage, { role: 'system', content: "Still working on it...", isStillWorking: true }] });
     }, 10000);
@@ -340,38 +324,21 @@ const Component: React.FC<ChatInterfaceProps> = ({ state, dispatch }) => {
   }
 
   return (
-    <motion.div
-      key="chat"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.3 }}
-      className="w-full h-full flex flex-col transition-all duration-500 ease-in-out pt-16"
-    >
-      <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
+    <div className="w-full h-full flex flex-col transition-all duration-500 ease-in-out pt-16">
+      <Button
+        variant="outline"
+        className="mb-4"
         onClick={() => {
           dispatch({ type: 'SET_SHOW_CHAT', payload: false });
           dispatch({ type: 'CLEAR_CHAT_HISTORY' });
         }}
-        className={`mb-4 px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
-          theme === 'dark'
-            ? 'bg-gray-700 text-white hover:bg-gray-600'
-            : 'bg-gray-200 text-black hover:bg-gray-300'
-        }`}
       >
         ← Back to Selection
-      </motion.button>
+      </Button>
       <div className="flex-grow overflow-hidden relative">
-        <motion.div
-          className={`absolute inset-0 overflow-y-auto ${
-            theme === 'dark' ? 'bg-[#1a1b1e]' : 'bg-gray-50'
-          } mt-4`}
+        <div
+          className="absolute inset-0 overflow-y-auto mt-4"
           onScroll={handleScroll}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5}}
         >
           <div className="max-w-5xl mx-auto px-4 py-6">
             <AnimatePresence>
@@ -392,25 +359,20 @@ const Component: React.FC<ChatInterfaceProps> = ({ state, dispatch }) => {
                       transition={{ duration: 0.3, delay: messageIndex * 0.1 }}
                       className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-2`}
                     >
-                      <motion.div
+                      <div
                         className={`max-w-[85%] rounded-2xl px-4 py-3 ${
                           message.role === 'user'
-                            ? 'bg-blue-500 text-white'
-                            : theme === 'dark'
-                            ? 'bg-gray-800 text-white'
-                            : 'bg-white text-black shadow-md'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-secondary text-secondary-foreground'
                         }`}
-                        whileHover={{ scale: 1.02 }}
-                        transition={{ duration: 0.2 }}
                       >
                         {message.content}
-                      </motion.div>
+                      </div>
                     </motion.div>
                   ))}
                   {group[0].role === 'assistant' && !group[0].feedbackSubmitted && (
                     <FeedbackSection
                       group={group[0]}
-                      theme={theme}
                       toggleFeedback={toggleFeedback}
                       handleStarClick={handleStarClick}
                       submitFeedback={submitFeedback}
@@ -427,7 +389,7 @@ const Component: React.FC<ChatInterfaceProps> = ({ state, dispatch }) => {
                         transition={{ duration: 0.3 }}
                       >
                         <Alert className="mt-2">
-                          Thank you for your feedback!
+                          <AlertDescription>Thank you for your feedback!</AlertDescription>
                         </Alert>
                       </motion.div>
                     )}
@@ -437,33 +399,28 @@ const Component: React.FC<ChatInterfaceProps> = ({ state, dispatch }) => {
             </AnimatePresence>
             <div ref={chatEndRef} />
           </div>
-        </motion.div>
+        </div>
         <AnimatePresence>
           {showScrollButton && (
-            <motion.button
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
               transition={{ duration: 0.3 }}
-              onClick={scrollToBottom}
-              className={`fixed bottom-4 right-4 p-2 rounded-full shadow-lg transition-all duration-300 ${
-                theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-black'
-              }`}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              aria-label="Scroll to bottom"
+              className="fixed bottom-4 right-4"
             >
-              <ChevronDown className="w-6 h-6" />
-            </motion.button>
+              <Button
+                size="icon"
+                onClick={scrollToBottom}
+                aria-label="Scroll to bottom"
+              >
+                <ChevronDown className="w-6 h-6" />
+              </Button>
+            </motion.div>
           )}
         </AnimatePresence>
       </div>
-      <motion.div
-        className={`border-t ${theme === 'dark' ? 'border-gray-800' : 'border-gray-200'}`}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-      >
+      <div className="border-t border-border">
         <div className="max-w-5xl mx-auto px-4 py-4">
           <AnimatePresence>
             <motion.div
@@ -472,22 +429,9 @@ const Component: React.FC<ChatInterfaceProps> = ({ state, dispatch }) => {
               exit={{ opacity: 0, height: 0 }}
               className="flex flex-wrap gap-2 mb-4 items-center"
             >
-              <motion.button
-                whileHover={{ scale: 1.1, rotate: 180 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={toggleFilters}
-                className={`p-2 rounded-full ${
-                  theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-gray-200 text-black'
-                }`}
-                aria-label={showFilters ? "Hide filters" : "Show filters"}
-              >
-                <motion.div
-                  animate={{ rotate: showFilters ? 45 : 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  {showFilters ? <X className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
-                </motion.div>
-              </motion.button>
+              <Button variant="outline" size="icon" onClick={toggleFilters}>
+                {showFilters ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+              </Button>
               <AnimatePresence>
                 {showFilters && (
                   <motion.div
@@ -496,39 +440,28 @@ const Component: React.FC<ChatInterfaceProps> = ({ state, dispatch }) => {
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <Popover
-                      trigger={
-                        <motion.button
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          className={`px-4 py-2 rounded-lg ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-gray-200 text-black'}`}
-                        >
-                          <Filter className="w-5 h-5 inline-block mr-2" />
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline">
+                          <Filter className="w-4 h-4 mr-2" />
                           {state.selectedMainTopic || 'Select Main Topic'}
-                        </motion.button>
-                      }
-                      content={
-                        <div className="w-56 grid gap-4">
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-56">
+                        <div className="grid gap-4">
                           {state.mainTopics.map((topic) => (
-                            <motion.button
+                            <Button
                               key={topic}
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
-                              className={`text-left px-2 py-1 rounded ${
-                                state.selectedMainTopic === topic
-                                  ? 'bg-blue-500 text-white'
-                                  : theme === 'dark'
-                                    ? 'text-white hover:bg-gray-700'
-                                    : 'text-black hover:bg-gray-200'
-                              }`}
+                              variant={state.selectedMainTopic === topic ? "default" : "ghost"}
+                              className="justify-start"
                               onClick={() => handleMainTopicChange(topic)}
                             >
                               {topic}
-                            </motion.button>
+                            </Button>
                           ))}
                         </div>
-                      }
-                    />
+                      </PopoverContent>
+                    </Popover>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -539,20 +472,19 @@ const Component: React.FC<ChatInterfaceProps> = ({ state, dispatch }) => {
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ duration: 0.2 }}
-                    className={`px-4 py-2 rounded-lg flex items-center ${
-                      theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-gray-200 text-black'
-                    }`}
+                    className="flex items-center"
                   >
-                    {state.selectedMainTopic}
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
+                    <span className="px-2 py-1 rounded-md bg-primary text-primary-foreground">
+                      {state.selectedMainTopic}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={removeMainTopic}
-                      className="ml-2 text-red-500 hover:text-red-600"
-                      aria-label="Remove selected topic"
+                      className="ml-1"
                     >
                       <X className="w-4 h-4" />
-                    </motion.button>
+                    </Button>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -560,46 +492,33 @@ const Component: React.FC<ChatInterfaceProps> = ({ state, dispatch }) => {
           </AnimatePresence>
           <div className="flex space-x-4">
             <div className="flex-grow relative">
-              <input
+              <Input
                 type="text"
                 value={state.query}
                 onChange={(e) => dispatch({ type: 'SET_QUERY', payload: e.target.value.slice(0, 280) })}
                 onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                 placeholder="Type your question here..."
-                className={`w-full p-3 pr-16 rounded-lg transition-all duration-300 ${
-                  theme === 'dark'
-                    ? 'bg-gray-800 text-white border-gray-700 focus:bg-gray-750'
-                    : 'bg-white text-black border-gray-200 focus:bg-gray-50'
-                } border shadow-sm focus:ring-2 focus:ring-blue-500 outline-none`}
+                className="pr-16"
                 disabled={state.loading.search}
               />
-              <span className={`absolute right-3 bottom-3 text-sm ${
-                theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-              }`}>
+              <span className="absolute right-3 bottom-3 text-sm text-muted-foreground">
                 {state.query.length}/280
               </span>
             </div>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+            <Button
               onClick={handleSearch}
               disabled={!state.query || state.loading.search}
-              className={`px-6 rounded-lg font-medium transition-all duration-300 transform hover:scale-[1.02] ${
-                theme === 'dark'
-                  ? 'bg-blue-600 text-white hover:bg-blue-700'
-                  : 'bg-blue-500 text-white hover:bg-blue-600'
-              } ${(!state.query || state.loading.search) ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {state.loading.search ? (
                 <Settings className="w-5 h-5 animate-spin" />
               ) : (
                 <Send className="w-5 h-5" />
               )}
-            </motion.button>
+            </Button>
           </div>
         </div>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   )
 }
 
