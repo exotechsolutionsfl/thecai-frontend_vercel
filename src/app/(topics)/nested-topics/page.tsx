@@ -181,11 +181,11 @@ export default function NestedTopics() {
                               className="w-full justify-between text-left h-auto py-2"
                               onClick={() => handleNestedTopicSelect(nestedTopic)}
                             >
-                              <div className="flex items-start space-x-3 overflow-hidden">
-                                <Folder className="w-5 h-5 flex-shrink-0 mt-1" />
-                                <span className="text-base font-semibold line-clamp-2">
+                              <div className="flex items-start space-x-3">
+                                <Folder className="w-6 h-6 flex-shrink-0 text-gray-600" />
+                                <h2 className="text-lg font-semibold break-words text-black">
                                   {highlightText(nestedTopic, searchTerm)}
-                                </span>
+                                </h2>
                               </div>
                               <ChevronRight className="w-5 h-5 flex-shrink-0 ml-2" />
                             </Button>
