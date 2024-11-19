@@ -306,20 +306,14 @@ export default function Vessel({ children }: VesselProps) {
                     transition={{ duration: 0.3 }}
                   >
                     <div className="space-y-4">
-                      <motion.div
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.3 }}
+                      <Button
+                        variant="link"
+                        className="p-0 text-lg"
+                        onClick={() => setActiveSection('main')}
                       >
-                        <Button
-                          variant="link"
-                          className="p-0 text-lg"
-                          onClick={() => setActiveSection('main')}
-                        >
-                          <ChevronLeft className="w-5 h-5 mr-1" />
-                          Back to Settings
-                        </Button>
-                      </motion.div>
+                        <ChevronLeft className="w-5 h-5 mr-1" />
+                        Back to Settings
+                      </Button>
                       {savedVehicles.map((vehicle, index) => (
                         <Card key={index}>
                           <CardContent className="p-4">
@@ -362,20 +356,14 @@ export default function Vessel({ children }: VesselProps) {
                     transition={{ duration: 0.3 }}
                   >
                     <div className="space-y-4">
-                      <motion.div
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.3 }}
+                      <Button
+                        variant="link"
+                        className="p-0 text-lg"
+                        onClick={() => setActiveSection('main')}
                       >
-                        <Button
-                          variant="link"
-                          className="p-0 text-lg"
-                          onClick={() => setActiveSection('main')}
-                        >
-                          <ChevronLeft className="w-5 h-5 mr-1" />
-                          Back to Settings
-                        </Button>
-                      </motion.div>
+                        <ChevronLeft className="w-5 h-5 mr-1" />
+                        Back to Settings
+                      </Button>
                       <h3 className="text-xl font-bold">Leave Feedback</h3>
                       <form onSubmit={handleFeedbackSubmit} className="space-y-4">
                         <div>
