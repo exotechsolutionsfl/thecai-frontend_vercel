@@ -110,7 +110,7 @@ export default function MainTopicsPage() {
                 </motion.div>
               ) : (
                 <motion.div
-                  className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"
+                  className="grid grid-cols-1 sm:grid-cols-2 gap-4"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
@@ -123,14 +123,14 @@ export default function MainTopicsPage() {
                           <CardContent className="p-4">
                             <Button
                               variant="ghost"
-                              className="w-full justify-between text-left"
+                              className="w-full justify-between text-left h-auto py-2"
                               onClick={() => handleTopicSelect(topic.name)}
                             >
-                              <div className="flex items-center space-x-3">
-                                <Folder className="w-5 h-5" />
-                                <span className="text-lg font-semibold">{topic.name}</span>
+                              <div className="flex items-start space-x-3 overflow-hidden">
+                                <Folder className="w-5 h-5 flex-shrink-0 mt-1" />
+                                <span className="text-base font-semibold line-clamp-2">{topic.name}</span>
                               </div>
-                              <ChevronRight className="w-5 h-5" />
+                              <ChevronRight className="w-5 h-5 flex-shrink-0 ml-2" />
                             </Button>
                           </CardContent>
                         </Card>
