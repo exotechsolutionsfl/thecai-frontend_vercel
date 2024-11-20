@@ -22,6 +22,10 @@ export default function AITroubleshooter() {
     localStorage.setItem('aiTroubleshooterState', JSON.stringify(state))
   }, [state])
 
+  useEffect(() => {
+    console.log('Current state:', state)
+  }, [state])
+
   const handleConfirm = useCallback(() => {
     if (state.selectedMake && state.selectedModel && state.selectedYear) {
       console.log('Setting showChat to true')
