@@ -1,13 +1,14 @@
 'use client'
 
-import React, { useReducer, useCallback, useEffect, Suspense } from 'react'
+import React, { useReducer, useCallback, useEffect, Suspense, lazy } from 'react'
+import { useTheme } from '@/context/ThemeProvider'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Loader2 } from 'lucide-react'
 import { Card, CardContent } from "@/components/ui/Card"
 import { initialState, reducer } from './state'
 
-const VehicleSelection = React.lazy(() => import('./vehicle-selection'))
-const ChatInterface = React.lazy(() => import('./chat-interface'))
+const VehicleSelection = lazy(() => import('./vehicle-selection'))
+const ChatInterface = lazy(() => import('./chat-interface'))
 
 export default function AITroubleshooter() {
   const [state, dispatch] = useReducer(reducer, initialState, (initial) => {
@@ -18,8 +19,14 @@ export default function AITroubleshooter() {
     return initial
   })
 
+  const { theme } = useTheme()
+
   useEffect(() => {
     localStorage.setItem('aiTroubleshooterState', JSON.stringify(state))
+  }, [state])
+
+  useEffect(() => {
+    console.log('Current state:', state)
   }, [state])
 
   const handleConfirm = useCallback(() => {
@@ -30,7 +37,7 @@ export default function AITroubleshooter() {
   }, [state.selectedMake, state.selectedModel, state.selectedYear])
 
   return (
-    <div className="container mx-auto px-4 py-8 min-h-screen flex items-center justify-center">
+    <div className={`container mx-auto px-4 py-8 min-h-screen flex items-center justify-center ${theme === 'dark' ? 'bg-[#1a1b1e] text-white' : 'bg-white text-black'}`}>
       <AnimatePresence mode="wait">
         {!state.showChat ? (
           <motion.div
