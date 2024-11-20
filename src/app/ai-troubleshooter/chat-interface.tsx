@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/Input"
 import { Textarea } from "@/components/ui/Textarea"
 import { State, Action } from './state'
 import { apiFetch } from '@api/api'
+import { useTheme } from '@/context/ThemeProvider'
 
 const useTopicSelection = (state: State, dispatch: React.Dispatch<Action>) => {
   const fetchMainTopics = useCallback(async () => {
@@ -156,10 +157,22 @@ const FeedbackSection: React.FC<FeedbackSectionProps> = ({ message, toggleFeedba
   )
 }
 
+const groupMessages = (messages: State['chatHistory']) => {
+  return messages.reduce((acc, message, index, array) => {
+    if (index === 0 || message.role !== array[index - 1].role) {
+      acc.push([message]);
+    } else {
+      acc[acc.length - 1].push(message);
+    }
+    return acc;
+  }, [] as State['chatHistory'][]);
+}
+
 const Component: React.FC<ChatInterfaceProps> = ({ state, dispatch }) => {
   const chatEndRef = useRef<HTMLDivElement>(null)
   const [showScrollButton, setShowScrollButton] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
+  const { theme } = useTheme()
 
   useTopicSelection(state, dispatch)
 
@@ -313,7 +326,14 @@ const Component: React.FC<ChatInterfaceProps> = ({ state, dispatch }) => {
   }
 
   return (
-    <div className="w-full h-full flex flex-col transition-all duration-500 ease-in-out pt-16">
+    <motion.div
+      key="chat"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.3 }}
+      className="w-full h-full flex flex-col transition-all duration-500 ease-in-out pt-16"
+    >
       <Button
         variant="outline"
         className="mb-4"
@@ -325,40 +345,48 @@ const Component: React.FC<ChatInterfaceProps> = ({ state, dispatch }) => {
         ← Back to Selection
       </Button>
       <div className="flex-grow overflow-hidden relative">
-        <div
-          className="absolute inset-0 overflow-y-auto mt-4"
+        <motion.div
+          className={`absolute inset-0 overflow-y-auto ${
+            theme === 'dark' ? 'bg-[#1a1b1e]' : 'bg-gray-50'
+          } mt-4`}
           onScroll={handleScroll}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
         >
           <div className="max-w-5xl mx-auto px-4 py-6">
             <AnimatePresence>
-              {state.chatHistory.map((message, index) => (
+              {groupMessages(state.chatHistory).map((group, groupIndex) => (
                 <motion.div
-                  key={index}
+                  key={groupIndex}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.3, delay: index * 0.1 }}
+                  transition={{ duration: 0.3, delay: groupIndex * 0.1 }}
                   className="mb-6"
                 >
-                  <motion.div
-                    initial={{ opacity: 0, x: message.role === 'user' ? 20 : -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-2`}
-                  >
-                    <div
-                      className={`max-w-[85%] rounded-2xl px-4 py-3 ${
-                        message.role === 'user'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-secondary text-secondary-foreground'
-                      }`}
+                  {group.map((message, messageIndex) => (
+                    <motion.div
+                      key={messageIndex}
+                      initial={{ opacity: 0, x: message.role === 'user' ? 20 : -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-2`}
                     >
-                      {message.content}
-                    </div>
-                  </motion.div>
-                  {message.role === 'assistant' && !message.feedbackSubmitted && (
+                      <div
+                        className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+                          message.role === 'user'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-secondary text-secondary-foreground'
+                        }`}
+                      >
+                        {message.content}
+                      </div>
+                    </motion.div>
+                  ))}
+                  {group[group.length -1].role === 'assistant' && !group[group.length -1].feedbackSubmitted && (
                     <FeedbackSection
-                      message={message}
+                      message={group[group.length -1]}
                       toggleFeedback={toggleFeedback}
                       handleStarClick={handleStarClick}
                       submitFeedback={submitFeedback}
@@ -367,7 +395,7 @@ const Component: React.FC<ChatInterfaceProps> = ({ state, dispatch }) => {
                     />
                   )}
                   <AnimatePresence>
-                    {message.feedbackSubmitted && message.feedbackSuccess && (
+                    {group[group.length -1].role === 'assistant' && group[group.length -1].feedbackSubmitted && group[group.length -1].feedbackSuccess && (
                       <motion.div
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -385,7 +413,7 @@ const Component: React.FC<ChatInterfaceProps> = ({ state, dispatch }) => {
             </AnimatePresence>
             <div ref={chatEndRef} />
           </div>
-        </div>
+        </motion.div>
         <AnimatePresence>
           {showScrollButton && (
             <motion.div
@@ -504,7 +532,7 @@ const Component: React.FC<ChatInterfaceProps> = ({ state, dispatch }) => {
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   )
 }
 
