@@ -90,7 +90,6 @@ export function reducer(state: State, action: Action): State {
     case 'SET_QUERY':
       return { ...state, query: action.payload }
     case 'SET_CHAT_HISTORY':
-      console.log('Updating chat history:', action.payload)
       return { ...state, chatHistory: action.payload }
     case 'SET_LOADING':
       return { ...state, loading: { ...state.loading, ...action.payload } }
