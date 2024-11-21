@@ -4,9 +4,9 @@ import React, { useReducer, useCallback, useEffect, Suspense } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { initialState, reducer } from './state'
 import { Card, CardContent } from "@/components/ui/Card"
-import { Skeleton } from "@/components/ui/SkeletonLoader"
+import { Skeleton } from "@/components/ui/Skeleton"
 
-const VehicleSelection = React.lazy(() => import('./vehicle-selection'))
+const VehicleSelection = React.lazy(() => import('@/components/vehicle-selection'))
 const ChatInterface = React.lazy(() => import('./chat-interface'))
 
 export default function AITroubleshooter() {

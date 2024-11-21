@@ -6,7 +6,7 @@ import { Search, FileText, ChevronRight } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { apiFetch } from '@api/api'
 import { debounce } from '@/lib/utils'
-import Loading from '@/components/loading'
+import Loading from '@/components/ui/loading'
 import { Button } from "@/components/ui/Button"
 import { Card, CardContent } from "@/components/ui/Card"
 import { Input } from "@/components/ui/Input"

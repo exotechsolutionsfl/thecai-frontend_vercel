@@ -3,7 +3,7 @@
 import { useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Settings, AlertTriangle } from 'lucide-react'
-import { State, Action } from './state'
+import { State, Action } from '../app/ai-troubleshooter/state'
 import { apiFetch } from '@api/api'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select"
 import { Button } from "@/components/ui/Button"
