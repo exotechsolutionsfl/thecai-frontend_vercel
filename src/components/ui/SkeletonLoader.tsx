@@ -1,18 +1,17 @@
-import { useTheme } from '@context/ThemeProvider'
+import { cn } from "@/lib/utils"
 
-interface SkeletonLoaderProps {
-  count?: number
+interface SkeletonProps {
   className?: string
+  count?: number
 }
 
-export default function SkeletonLoader({ count = 1, className = '' }: SkeletonLoaderProps) {
-  const { theme } = useTheme()
-
+export function Skeleton({ className, count = 1 }: SkeletonProps) {
   const skeletonItem = (
     <div
-      className={`animate-pulse rounded-md ${
-        theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'
-      } ${className}`}
+      className={cn(
+        "animate-pulse rounded-md bg-muted",
+        className
+      )}
     />
   )
 
