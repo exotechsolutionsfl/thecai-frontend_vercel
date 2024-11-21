@@ -1,3 +1,5 @@
+'use client'
+
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useTheme } from '@/context/ThemeProvider'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -181,7 +183,7 @@ const FeedbackSection: React.FC<FeedbackSectionProps> = ({ group, theme, toggleF
   )
 }
 
-const Component: React.FC<ChatInterfaceProps> = ({ state, dispatch }) => {
+const ChatInterface: React.FC<ChatInterfaceProps> = ({ state, dispatch }) => {
   const { theme } = useTheme()
   const chatEndRef = useRef<HTMLDivElement>(null)
   const [showScrollButton, setShowScrollButton] = useState(false)
@@ -603,4 +605,4 @@ const Component: React.FC<ChatInterfaceProps> = ({ state, dispatch }) => {
   )
 }
 
-export default Component;
+export default ChatInterface;
