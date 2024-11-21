@@ -168,7 +168,7 @@ const FeedbackSection: React.FC<FeedbackSectionProps> = ({ group, toggleFeedback
   )
 }
 
-const ChatInterface: React.FC<ChatInterfaceProps> = ({ state, dispatch }) => {
+export default function Component({ state, dispatch }: ChatInterfaceProps) {
   const chatEndRef = useRef<HTMLDivElement>(null)
   const [showScrollButton, setShowScrollButton] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
@@ -203,7 +203,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ state, dispatch }) => {
     const tempQuery = state.query;
     dispatch({ type: 'SET_QUERY', payload: '' });
 
-    // Show "Still working" message after 10 seconds.
     const stillWorkingTimeout = setTimeout(() => {
       dispatch({ type: 'SET_CHAT_HISTORY', payload: [...state.chatHistory, userMessage, { role: 'system', content: "Still working on it...", isStillWorking: true }] });
     }, 10000);
@@ -375,7 +374,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ state, dispatch }) => {
                     </div>
                   </motion.div>
                 ))}
-                {group[0].role === 'assistant' && !group[0].feedbackSubmitted && <FeedbackSection
+                {group[0].role === 'assistant' && !group[0].feedbackSubmitted && (
+                  <FeedbackSection
                     group={group[0]}
                     toggleFeedback={toggleFeedback}
                     handleStarClick={handleStarClick}
@@ -383,7 +383,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ state, dispatch }) => {
                     state={state}
                     dispatch={dispatch}
                   />
-                }
+                )}
                 <AnimatePresence>
                   {group[0].feedbackSubmitted && group[0].feedbackSuccess && (
                     <motion.div
@@ -532,5 +532,3 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ state, dispatch }) => {
     </motion.div>
   )
 }
-
-export default ChatInterface;
