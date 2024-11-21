@@ -30,7 +30,7 @@ export default function AITroubleshooter() {
   }, [state.selectedMake, state.selectedModel, state.selectedYear])
 
   return (
-    <div className="container mx-auto px-4 py-8 h-screen flex items-center justify-center overflow-hidden">
+    <div className="container mx-auto px-4 py-8 min-h-screen flex items-center justify-center overflow-hidden">
       <AnimatePresence mode="wait">
         {!state.showChat ? (
           <motion.div
