@@ -4,13 +4,11 @@ import { ThemeProvider } from '@context/ThemeProvider'
 import { VehicleProvider } from '@context/VehicleContext'
 import Script from 'next/script'
 import Vessel from '@components/Vessel'
+import { metadata } from './metadata'
 
 const inter = Inter({ subsets: ['latin'] })
 
-export const metadata = {
-  title: 'ThecAI',
-  description: 'Your personal car knowledge base',
-}
+export { metadata }
 
 export default function RootLayout({
   children,
@@ -18,7 +16,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html suppressHydrationWarning>
       <head>
         <Script id="theme-script" strategy="beforeInteractive">
           {`
@@ -29,7 +27,7 @@ export default function RootLayout({
           `}
         </Script>
       </head>
-      <body className={inter.className}>
+      <body className={`${inter.className} min-h-screen`}>
         <ThemeProvider>
           <VehicleProvider>
             <Vessel>

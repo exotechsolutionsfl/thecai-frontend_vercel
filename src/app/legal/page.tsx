@@ -6,11 +6,11 @@ export default function LegalPage() {
   const { theme } = useTheme();
 
   return (
-    <div className={`min-h-screen ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}>
+    <div className="h-full overflow-y-auto">
       <main className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold text-center mb-8">Privacy Policy and Terms of Service</h1>
         
-        <div className="space-y-8">
+        <div className="space-y-8 max-w-4xl mx-auto">
           <section id="privacy-policy" className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-gray-100'} rounded-lg p-6`}>
             <h2 className="text-2xl font-semibold mb-4">Privacy Policy</h2>
             <div className="space-y-4">

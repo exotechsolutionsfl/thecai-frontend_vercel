@@ -3,13 +3,86 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { Plus, FileSearch, ChevronRight, Bot } from 'lucide-react'
+import { FileSearch, Bot, ChevronRight, Plus } from 'lucide-react'
 import { useSavedVehicles } from '@context/VehicleContext'
 import { useTheme } from '@context/ThemeProvider'
 import { Button } from "@/components/ui/Button"
 import { Card, CardContent } from "@/components/ui/Card"
 
-interface SavedVehicle {
+interface QuickAction {
+  title: string
+  description: string
+  icon: React.ElementType
+  onClick: () => void
+}
+
+const QuickActionButton = ({ title, description, icon: Icon, onClick }: QuickAction) => (
+  <Button 
+    variant="outline" 
+    className="w-full justify-start h-auto py-4 px-4 group hover:bg-accent/50"
+    onClick={onClick}
+  >
+    <div className="flex items-start">
+      <Icon className="h-5 w-5 mr-4 mt-0.5 flex-shrink-0 group-hover:text-primary transition-colors" />
+      <div className="text-left">
+        <div className="font-medium">{title}</div>
+        <div className="text-sm text-muted-foreground mt-1">
+          {description}
+        </div>
+      </div>
+    </div>
+  </Button>
+)
+
+const VehicleList = ({ 
+  vehicles, 
+  onSelect,
+  onAdd 
+}: { 
+  vehicles: Vehicle[]
+  onSelect: (vehicle: Vehicle) => void
+  onAdd: () => void
+}) => (
+  <div className="space-y-2">
+    {vehicles.map((vehicle, index) => (
+      <Button
+        key={index}
+        variant="ghost"
+        className="w-full justify-between group hover:bg-accent/50"
+        onClick={() => onSelect(vehicle)}
+      >
+        <span className="truncate">
+          {vehicle.make} {vehicle.model} ({vehicle.year})
+        </span>
+        <ChevronRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-all" />
+      </Button>
+    ))}
+    <Button
+      variant="outline"
+      className="w-full justify-start group hover:bg-accent/50"
+      onClick={onAdd}
+    >
+      <Plus className="mr-2 h-4 w-4 group-hover:text-primary transition-colors" />
+      Add Vehicle
+    </Button>
+  </div>
+)
+
+const EmptyVehicleState = ({ onClick }: { onClick: () => void }) => (
+  <div className="text-center space-y-4">
+    <p className="text-muted-foreground">No vehicles saved yet</p>
+    <Button 
+      variant="outline"
+      onClick={onClick} 
+      className="w-full sm:w-auto group hover:bg-accent/50"
+    >
+      <Plus className="mr-2 h-4 w-4 group-hover:text-primary transition-colors" />
+      Add Your First Vehicle
+    </Button>
+  </div>
+)
+
+interface Vehicle {
   make: string
   model: string
   year: string
@@ -27,91 +100,67 @@ export default function HomePage() {
 
   if (!mounted) return null
 
-  const handleGetStarted = () => {
-    router.push('/vehicle-selection')
-  }
-
-  const handleSelectVehicle = (vehicle: SavedVehicle) => {
+  const handleGetStarted = () => router.push('/vehicle-selection')
+  const handleAITroubleshooter = () => router.push('/ai-troubleshooter')
+  const handleSelectVehicle = (vehicle: Vehicle) => {
     router.push(`/main-topics?make=${encodeURIComponent(vehicle.make)}&model=${encodeURIComponent(vehicle.model)}&year=${encodeURIComponent(vehicle.year)}`)
   }
 
-  const handleAITroubleshooter = () => {
-    router.push('/ai-troubleshooter')
-  }
+  const quickActions: QuickAction[] = [
+    {
+      title: "Search Knowledge Base",
+      description: "Find detailed information about your vehicle",
+      icon: FileSearch,
+      onClick: handleGetStarted
+    },
+    {
+      title: "AI Troubleshooter",
+      description: "Get AI-powered assistance for your vehicle",
+      icon: Bot,
+      onClick: handleAITroubleshooter
+    }
+  ]
 
   return (
-    <div className={`min-h-screen flex flex-col ${theme === 'dark' ? 'bg-black text-white' : 'bg-white text-black'}`}>
-      <main className="flex-grow flex flex-col items-center justify-center p-4 md:p-8">
-        <div className="w-full max-w-4xl space-y-8">
+    <div className={`h-full flex flex-col ${theme === 'dark' ? 'bg-black text-white' : 'bg-white text-black'}`}>
+      <main className="flex-1 flex items-center justify-center p-4">
+        <div className="w-full max-w-3xl space-y-8">
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="text-center"
+            className="grid gap-6 md:grid-cols-2"
           >
-            <h1 className="text-4xl md:text-6xl font-bold mb-2">Autom8T</h1>
-            <p className="text-xl md:text-2xl text-muted-foreground">Your Centralized Car Knowledge Hub</p>
-          </motion.div>
-          
-          <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardContent className="p-6">
-                <h2 className="text-2xl font-semibold mb-4">Quick Actions</h2>
-                <div className="space-y-4">
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start text-left" 
-                    onClick={handleGetStarted}
-                  >
-                    <FileSearch className="mr-2 h-4 w-4" />
-                    Search Knowledge Base
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start text-left" 
-                    onClick={handleAITroubleshooter}
-                  >
-                    <Bot className="mr-2 h-4 w-4" />
-                    AI Troubleshooter
-                  </Button>
+                <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
+                <div className="space-y-3">
+                  {quickActions.map((action, index) => (
+                    <QuickActionButton key={index} {...action} />
+                  ))}
                 </div>
               </CardContent>
             </Card>
 
             <Card>
               <CardContent className="p-6">
-                <h2 className="text-2xl font-semibold mb-4">My Vehicles</h2>
+                <h2 className="text-xl font-semibold mb-4">My Vehicles</h2>
                 {savedVehicles.length > 0 ? (
-                  <div className="space-y-2">
-                    {savedVehicles.map((vehicle, index) => (
-                      <Button
-                        key={index}
-                        variant="ghost"
-                        className="w-full justify-between"
-                        onClick={() => handleSelectVehicle(vehicle)}
-                      >
-                        <span>{vehicle.make} {vehicle.model} ({vehicle.year})</span>
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    ))}
-                    <Button className="w-full mt-4" onClick={handleGetStarted}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add New Vehicle
-                    </Button>
-                  </div>
+                  <VehicleList
+                    vehicles={savedVehicles}
+                    onSelect={handleSelectVehicle}
+                    onAdd={handleGetStarted}
+                  />
                 ) : (
-                  <Button className="w-full" onClick={handleGetStarted}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Your First Vehicle
-                  </Button>
+                  <EmptyVehicleState onClick={handleGetStarted} />
                 )}
               </CardContent>
             </Card>
-          </div>
+          </motion.div>
         </div>
       </main>
-      <footer className="py-4 text-center text-sm text-muted-foreground">
-        © 2023 Autom8T. All rights reserved.
+      <footer className="py-2 text-center text-xs text-muted-foreground">
+        © {new Date().getFullYear()} ThecAI. All rights reserved.
       </footer>
     </div>
   )

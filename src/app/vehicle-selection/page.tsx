@@ -25,7 +25,7 @@ function SelectDropdown({ label, options, value, onChange, loading, disabled }: 
     <div className="space-y-2">
       <Label htmlFor={label}>{label}</Label>
       <Select value={value} onValueChange={onChange} disabled={disabled || loading}>
-        <SelectTrigger id={label} className="w-full">
+        <SelectTrigger id={label}>
           <SelectValue placeholder={`Select ${label}`} />
         </SelectTrigger>
         <SelectContent>
@@ -171,14 +171,14 @@ export default function VehicleSelection() {
 
   if (loading.page) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="fixed inset-0 flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 overflow-hidden">
+    <div className="fixed inset-0 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardContent className="pt-6">
           <h1 className="text-2xl font-bold mb-6 text-center">Select Your Vehicle</h1>
