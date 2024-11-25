@@ -24,6 +24,12 @@ interface VesselProps {
   children: React.ReactNode
 }
 
+interface Vehicle {
+  make: string
+  model: string
+  year: string
+}
+
 export default function Vessel({ children }: VesselProps) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [activeSection, setActiveSection] = useState<'main' | 'myVehicles' | 'feedback'>('main')
@@ -74,14 +80,14 @@ export default function Vessel({ children }: VesselProps) {
     const nestedTopic = searchParams.get('nestedTopic')
     const subtopic = searchParams.get('subtopic')
 
-    let title = make && model && year ? `${make} ${model} (${year})` : ''
-    let breadcrumbs: BreadcrumbItem[] = []
+    const title = make && model && year ? `${make} ${model} (${year})` : ''
+    const breadcrumbs: BreadcrumbItem[] = []
 
     if (make && model && year) {
-      breadcrumbs = [
+      breadcrumbs.push(
         { label: 'Vehicle Selection', href: '/vehicle-selection' },
         { label: title, href: `/main-topics?make=${make}&model=${model}&year=${year}` }
-      ]
+      )
 
       if (mainTopic) {
         breadcrumbs.push({ 
@@ -202,7 +208,7 @@ export default function Vessel({ children }: VesselProps) {
                     <ChevronLeft className="w-5 h-5 mr-1" />
                     Back to Settings
                   </Button>
-                  {savedVehicles.map((vehicle: any, index: number) => (
+                  {savedVehicles.map((vehicle: Vehicle, index: number) => (
                     <Card key={index}>
                       <CardContent className="p-4">
                         <div className="flex justify-between items-center">
