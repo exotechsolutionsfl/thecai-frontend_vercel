@@ -1,18 +1,15 @@
+'use client'
+
 import { motion } from 'framer-motion'
 import { ImageIcon } from 'lucide-react'
 import { useTheme } from '@context/ThemeProvider'
 import ImageRenderer from './ImageRenderer'
-
-interface ChunkText {
-  page_number: number;
-  text: string;
-  [key: string]: string | number;
-}
+import { ChunkText } from '@/types/dynamic-content'
 
 interface ChunkRendererProps {
-  chunk: ChunkText;
-  debouncedSearchTerm: string;
-  onImageClick: (url: string) => void;
+  chunk: ChunkText
+  debouncedSearchTerm: string
+  onImageClick: (url: string) => void
 }
 
 export default function ChunkRenderer({ chunk, debouncedSearchTerm, onImageClick }: ChunkRendererProps) {
@@ -46,7 +43,7 @@ export default function ChunkRenderer({ chunk, debouncedSearchTerm, onImageClick
           <ImageRenderer
             key={imageKey}
             imageUrl={imageUrl}
-            pageNumber={chunk.page_number}
+            pageNumber={chunk.page_number || 0}
             imageIndex={i}
             onImageClick={onImageClick}
           />
