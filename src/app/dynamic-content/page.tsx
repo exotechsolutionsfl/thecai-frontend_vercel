@@ -9,6 +9,7 @@ import { useDynamicMenu } from '@/hooks/useDynamicMenu';
 import { MenuList } from '@/components/dynamic-menu/MenuList';
 import { ContentDisplay } from '@/components/dynamic-menu/ContentDisplay';
 import { MenuItem } from '@/types/dynamic-menu';
+import { LoadingSpinner } from '@/components/ui/loading';
 
 export default function DynamicContentPage() {
   const searchParams = useSearchParams();
@@ -43,6 +44,10 @@ export default function DynamicContentPage() {
       });
     }
   };
+
+  if (loading) {
+    return <LoadingSpinner />;
+  }
 
   if (error) {
     return (
