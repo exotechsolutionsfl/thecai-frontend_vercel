@@ -1,16 +1,19 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ChevronLeft } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
-import { useMenuNavigation } from '@/hooks/useMenuNavigation';
+import { useDynamicMenu } from '@/hooks/useDynamicMenu';
 import { MenuList } from '@/components/dynamic-menu/MenuList';
+import { ContentDisplay } from '@/components/dynamic-menu/ContentDisplay';
+import { MenuItem } from '@/types/dynamic-menu';
 
 export default function DynamicContentPage() {
   const searchParams = useSearchParams();
-  const { menuState, currentPath, error, fetchMenuItems, expandMenuItem, navigateBack } = useMenuNavigation();
+  const { menuState, loading, error, currentPath, fetchMenuItems, toggleMenuItem, navigateBack } = useDynamicMenu();
+  const [selectedContent, setSelectedContent] = useState<MenuItem | null>(null);
 
   const make = searchParams.get('make') || '';
   const model = searchParams.get('model') || '';
@@ -21,6 +24,25 @@ export default function DynamicContentPage() {
       fetchMenuItems({ make, model, year });
     }
   }, [make, model, year, fetchMenuItems]);
+
+  const handleItemClick = async (item: MenuItem) => {
+    if (item.type === 'content') {
+      setSelectedContent(item);
+      return;
+    }
+
+    toggleMenuItem('root', item);
+    
+    if (!item.isExpanded && !menuState[item.id]) {
+      await fetchMenuItems({
+        make,
+        model,
+        year,
+        menuPath: item.name,
+        topMenu: currentPath[0] || item.name
+      });
+    }
+  };
 
   if (error) {
     return (
@@ -46,9 +68,12 @@ export default function DynamicContentPage() {
           )}
           <MenuList
             items={menuState.root || []}
-            onExpand={(item) => expandMenuItem(item, { make, model, year })}
+            onExpand={handleItemClick}
             menuState={menuState}
           />
+        </div>
+        <div className="md:col-span-2">
+          {selectedContent && <ContentDisplay item={selectedContent} />}
         </div>
       </div>
     </div>

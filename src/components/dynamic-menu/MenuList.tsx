@@ -18,7 +18,7 @@ export function MenuList({ items, onExpand, menuState }: MenuListProps) {
         exit={{ opacity: 0 }}
         className="space-y-2"
       >
-        {items.map((item) => (
+        {items?.map((item) => (
           <div key={item.id}>
             <MenuItem item={item} onExpand={onExpand} />
             {item.type === 'content' && <MenuContent item={item} />}

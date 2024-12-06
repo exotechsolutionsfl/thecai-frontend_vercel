@@ -7,7 +7,7 @@ interface ContentDisplayProps {
   item: MenuItem;
 }
 
-export default function ContentDisplay({ item }: ContentDisplayProps) {
+export function ContentDisplay({ item }: ContentDisplayProps) {
   if (!item.content) {
     return null;
   }
