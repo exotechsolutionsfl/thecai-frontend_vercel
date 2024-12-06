@@ -3,14 +3,12 @@ import Image from 'next/image';
 import { MenuItem } from '@/types/dynamic-menu';
 import { Card, CardContent } from '@/components/ui/Card';
 
-interface ContentDisplayProps {
+interface MenuContentProps {
   item: MenuItem;
 }
 
-export default function ContentDisplay({ item }: ContentDisplayProps) {
-  if (!item.content) {
-    return null;
-  }
+export function MenuContent({ item }: MenuContentProps) {
+  if (!item.content) return null;
 
   return (
     <motion.div

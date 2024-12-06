@@ -1,26 +1,18 @@
-export interface ApiMenuItem {
-  name: string;
-  parent_name: string | null;
-  content?: {
-    text_1?: string;
-    text_2?: string;
-    image_1?: string;
-    image_2?: string;
-  };
-}
-
 export interface MenuItem {
+  id: string;
   name: string;
-  type: 'menu' | 'chunk_text';
+  parentId: string | null;
+  type: 'menu' | 'content';
   content?: {
-    text_1?: string;
-    text_2?: string;
-    image_1?: string;
-    image_2?: string;
+    text: string;
+    images?: {
+      url: string;
+      alt: string;
+    }[];
   };
-  children?: MenuItem[];
   isExpanded?: boolean;
-  parent_name: string | null;
+  isLoading?: boolean;
+  children?: MenuItem[];
 }
 
 export interface MenuState {
@@ -31,5 +23,11 @@ export interface MenuParams {
   make: string;
   model: string;
   year: string;
-  menu_path?: string;
+  menuPath?: string;
+  topMenu?: string;
+}
+
+export interface MenuResponse {
+  items: MenuItem[];
+  error?: string;
 }

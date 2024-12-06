@@ -1,17 +1,6 @@
 import { useState, useCallback } from 'react';
-import { ApiMenuItem, MenuItem, MenuParams, MenuState } from '@/types/dynamic-menu';
-import { apiFetch } from '@api/api';
-
-function transformApiResponse(items: ApiMenuItem[]): MenuItem[] {
-  return items.map(item => ({
-    name: item.name.replace(/_/g, ' '),
-    type: item.content ? 'chunk_text' : 'menu',
-    content: item.content,
-    isExpanded: false,
-    parent_name: item.parent_name,
-    children: []
-  }));
-}
+import { MenuItem, MenuParams, MenuState, MenuResponse } from '@/types/dynamic-menu';
+import { apiFetch } from '@/app/api/api';
 
 export function useDynamicMenu() {
   const [menuState, setMenuState] = useState<MenuState>({});
@@ -28,14 +17,15 @@ export function useDynamicMenu() {
         make: params.make,
         model: params.model,
         year: params.year,
-        ...(params.menu_path && { menu_path: params.menu_path })
+        ...(params.menuPath && { menu_path: params.menuPath }),
+        ...(params.topMenu && { top_menu: params.topMenu })
       });
 
-      const response = await apiFetch(`api/dynamic-menu?${queryParams.toString()}`);
-      const transformedItems = transformApiResponse(response);
+      const response = await apiFetch(`api/dynamic-menu?${queryParams}`);
+      const menuResponse = response as MenuResponse;
       
-      if (params.menu_path) {
-        const path = params.menu_path.replace(/_/g, ' ').trim();
+      if (params.menuPath) {
+        const path = params.menuPath.replace(/_/g, ' ').trim();
         if (path) {
           setCurrentPath(prev => [...prev, path]);
         }
@@ -43,15 +33,14 @@ export function useDynamicMenu() {
       
       setMenuState(prev => {
         const newState = { ...prev };
-        const key = params.menu_path ? params.menu_path.replace(/_/g, ' ') : 'root';
-        newState[key] = transformedItems;
+        const key = params.menuPath ? params.menuPath.replace(/_/g, ' ') : 'root';
+        newState[key] = menuResponse.items;
         
-        // If this is a submenu, update the parent's children
-        if (params.menu_path) {
+        if (params.menuPath) {
           const parentKey = currentPath[currentPath.length - 1] || 'root';
           if (newState[parentKey]) {
             newState[parentKey] = newState[parentKey].map(item => 
-              item.name === key ? { ...item, children: transformedItems } : item
+              item.name === key ? { ...item, children: menuResponse.items } : item
             );
           }
         }
@@ -59,11 +48,8 @@ export function useDynamicMenu() {
         return newState;
       });
       
-      return transformedItems;
+      return menuResponse.items;
     } catch (err) {
-      if (err instanceof Error && err.message.includes('No menus found')) {
-        return [];
-      }
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch menu items';
       setError(errorMessage);
       return [];
@@ -76,7 +62,7 @@ export function useDynamicMenu() {
     setMenuState(prev => ({
       ...prev,
       [path]: prev[path].map(menuItem => 
-        menuItem.name === item.name 
+        menuItem.id === item.id 
           ? { ...menuItem, isExpanded: !menuItem.isExpanded }
           : menuItem
       )
