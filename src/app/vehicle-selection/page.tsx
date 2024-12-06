@@ -142,10 +142,13 @@ export default function VehicleSelection() {
     if (selectedMake && selectedModel && selectedYear) {
       setLoading(prev => ({ ...prev, vehicleType: true }))
       try {
-        const url = `/dynamic-content?make=${encodeURIComponent(selectedMake)}&model=${encodeURIComponent(selectedModel)}&year=${encodeURIComponent(selectedYear)}`
+        const data = await apiFetch(`api/main-topics?make=${encodeURIComponent(selectedMake)}&model=${encodeURIComponent(selectedModel)}&year=${encodeURIComponent(selectedYear)}`)
+        const url = data.isLegacy
+          ? `/legacy-main-topics?make=${encodeURIComponent(selectedMake)}&model=${encodeURIComponent(selectedModel)}&year=${encodeURIComponent(selectedYear)}`
+          : `/main-topics?make=${encodeURIComponent(selectedMake)}&model=${encodeURIComponent(selectedModel)}&year=${encodeURIComponent(selectedYear)}`
         router.push(url)
       } catch (error) {
-        console.error("Error navigating to dynamic content:", error)
+        console.error("Error checking vehicle type:", error)
         alert("An error occurred. Please try again.")
       } finally {
         setLoading(prev => ({ ...prev, vehicleType: false }))

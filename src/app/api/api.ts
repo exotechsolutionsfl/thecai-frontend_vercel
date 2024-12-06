@@ -7,7 +7,7 @@ if (!API_BASE_URL) {
 export async function apiFetch(
   endpoint: string,
   options: RequestInit = {},
-  timeout: number = 30000
+  timeout: number = 30000  // Increased default timeout to 30 seconds
 ) {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
