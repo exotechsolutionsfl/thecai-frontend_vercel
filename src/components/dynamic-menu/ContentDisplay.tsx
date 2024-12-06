@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import { MenuItem } from '@/types/dynamic-menu';
 import { Card, CardContent } from '@/components/ui/Card';
 
@@ -20,7 +21,36 @@ export default function ContentDisplay({ item }: ContentDisplayProps) {
     >
       <Card>
         <CardContent className="prose dark:prose-invert max-w-none p-6">
-          <div dangerouslySetInnerHTML={{ __html: item.content }} />
+          {item.content.text_1 && (
+            <div className="mb-4">
+              <p>{item.content.text_1}</p>
+              {item.content.image_1 && (
+                <div className="relative w-full h-64 my-4">
+                  <Image
+                    src={item.content.image_1}
+                    alt="Content image 1"
+                    fill
+                    className="object-contain"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+          {item.content.text_2 && (
+            <div className="mb-4">
+              <p>{item.content.text_2}</p>
+              {item.content.image_2 && (
+                <div className="relative w-full h-64 my-4">
+                  <Image
+                    src={item.content.image_2}
+                    alt="Content image 2"
+                    fill
+                    className="object-contain"
+                  />
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
     </motion.div>

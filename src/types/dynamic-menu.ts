@@ -1,20 +1,26 @@
 export interface ApiMenuItem {
   name: string;
   parent_name: string | null;
-  content?: string;
+  content?: {
+    text_1?: string;
+    text_2?: string;
+    image_1?: string;
+    image_2?: string;
+  };
 }
 
 export interface MenuItem {
   name: string;
   type: 'menu' | 'chunk_text';
-  content?: string;
+  content?: {
+    text_1?: string;
+    text_2?: string;
+    image_1?: string;
+    image_2?: string;
+  };
   children?: MenuItem[];
   isExpanded?: boolean;
-}
-
-export interface DynamicMenuResponse {
-  items: MenuItem[];
-  error?: string;
+  parent_name: string | null;
 }
 
 export interface MenuState {
