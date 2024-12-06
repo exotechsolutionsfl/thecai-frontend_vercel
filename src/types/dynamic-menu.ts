@@ -1,3 +1,9 @@
+export interface ApiMenuItem {
+  name: string;
+  parent_name: string | null;
+  content?: string;
+}
+
 export interface MenuItem {
   name: string;
   type: 'menu' | 'chunk_text';

@@ -1,6 +1,15 @@
 import { useState, useCallback } from 'react';
-import { MenuItem, MenuParams, MenuState } from '@/types/dynamic-menu';
+import { ApiMenuItem, MenuItem, MenuParams, MenuState } from '@/types/dynamic-menu';
 import { apiFetch } from '@api/api';
+
+function transformApiResponse(items: ApiMenuItem[]): MenuItem[] {
+  return items.map(item => ({
+    name: item.name.replace(/_/g, ' '),
+    type: item.content ? 'chunk_text' : 'menu',
+    content: item.content,
+    isExpanded: false
+  }));
+}
 
 export function useDynamicMenu() {
   const [menuState, setMenuState] = useState<MenuState>({});
@@ -19,14 +28,15 @@ export function useDynamicMenu() {
         ...(params.menu_path && { menu_path: params.menu_path })
       });
 
-      const data = await apiFetch(`api/dynamic-menu?${queryParams.toString()}`);
+      const response = await apiFetch(`api/dynamic-menu?${queryParams.toString()}`);
+      const transformedItems = transformApiResponse(response);
       
       setMenuState(prev => ({
         ...prev,
-        [params.menu_path || 'root']: data.items
+        [params.menu_path || 'root']: transformedItems
       }));
       
-      return data.items;
+      return transformedItems;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch menu items';
       setError(errorMessage);

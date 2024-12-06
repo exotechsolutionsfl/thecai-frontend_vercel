@@ -27,7 +27,7 @@ export default function MenuList({ items, path, onItemClick, isLoading }: MenuLi
         exit={{ opacity: 0 }}
         className="space-y-2"
       >
-        {items.map((item) => (
+        {items?.map((item) => (
           <motion.div
             key={item.name}
             initial={{ opacity: 0, y: -10 }}
