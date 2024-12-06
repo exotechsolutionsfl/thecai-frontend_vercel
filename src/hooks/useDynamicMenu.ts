@@ -8,7 +8,8 @@ function transformApiResponse(items: ApiMenuItem[]): MenuItem[] {
     type: item.content ? 'chunk_text' : 'menu',
     content: item.content,
     isExpanded: false,
-    parent_name: item.parent_name
+    parent_name: item.parent_name,
+    children: []
   }));
 }
 
@@ -34,17 +35,29 @@ export function useDynamicMenu() {
       const transformedItems = transformApiResponse(response);
       
       if (params.menu_path) {
-        // Only add to currentPath if menu_path exists and is not empty
-        const path = params.menu_path.trim();
+        const path = params.menu_path.replace(/_/g, ' ').trim();
         if (path) {
           setCurrentPath(prev => [...prev, path]);
         }
       }
       
-      setMenuState(prev => ({
-        ...prev,
-        [params.menu_path || 'root']: transformedItems
-      }));
+      setMenuState(prev => {
+        const newState = { ...prev };
+        const key = params.menu_path ? params.menu_path.replace(/_/g, ' ') : 'root';
+        newState[key] = transformedItems;
+        
+        // If this is a submenu, update the parent's children
+        if (params.menu_path) {
+          const parentKey = currentPath[currentPath.length - 1] || 'root';
+          if (newState[parentKey]) {
+            newState[parentKey] = newState[parentKey].map(item => 
+              item.name === key ? { ...item, children: transformedItems } : item
+            );
+          }
+        }
+        
+        return newState;
+      });
       
       return transformedItems;
     } catch (err) {
@@ -57,7 +70,7 @@ export function useDynamicMenu() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentPath]);
 
   const toggleMenuItem = useCallback((path: string, item: MenuItem) => {
     setMenuState(prev => ({
@@ -73,11 +86,9 @@ export function useDynamicMenu() {
   const navigateBack = useCallback(() => {
     if (currentPath.length > 0) {
       setCurrentPath(prev => prev.slice(0, -1));
-      // Also update menu state to show previous level
       const newPath = currentPath.slice(0, -1).join('/') || 'root';
       setMenuState(prev => {
         const newState = { ...prev };
-        // Close the current level
         if (newState[newPath]) {
           newState[newPath] = newState[newPath].map(item => ({
             ...item,

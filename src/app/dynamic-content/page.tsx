@@ -28,27 +28,29 @@ export default function DynamicContentPage() {
   const handleItemClick = async (path: string, item: MenuItem) => {
     if (item.type === 'chunk_text') {
       setSelectedContent(item);
-    } else {
-      if (!menuState[path] && !item.children) {
-        const items = await fetchMenuItems({
-          make,
-          model,
-          year,
-          menu_path: item.name
+      return;
+    }
+
+    // Toggle the menu item first for immediate feedback
+    toggleMenuItem(path, item);
+
+    // If the item is being expanded and doesn't have children yet, fetch them
+    if (!item.isExpanded && !menuState[item.name]) {
+      const items = await fetchMenuItems({
+        make,
+        model,
+        year,
+        menu_path: item.name.replace(/ /g, '_') // Convert spaces back to underscores for API
+      });
+
+      if (items.length === 0) {
+        setSelectedContent({
+          ...item,
+          type: 'chunk_text',
+          content: { text_1: 'No further items found for this menu.' }
         });
-        
-        if (items.length === 0) {
-          setSelectedContent({
-            ...item,
-            type: 'chunk_text',
-            content: { text_1: 'No further items found for this menu.' }
-          });
-          return;
-        }
-        
-        item.children = items;
+        return;
       }
-      toggleMenuItem(path, item);
     }
   };
 
