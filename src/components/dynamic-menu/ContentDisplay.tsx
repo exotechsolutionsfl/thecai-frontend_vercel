@@ -1,27 +1,28 @@
-import { motion } from 'framer-motion'
-import { ChunkText } from '@/types/dynamic-content'
-import ChunkRenderer from '@/components/ChunkRenderer'
+import { motion } from 'framer-motion';
+import { MenuItem } from '@/types/dynamic-menu';
+import { Card, CardContent } from '@/components/ui/Card';
 
 interface ContentDisplayProps {
-  chunks: ChunkText[]
+  item: MenuItem;
 }
 
-export default function ContentDisplay({ chunks }: ContentDisplayProps) {
+export default function ContentDisplay({ item }: ContentDisplayProps) {
+  if (!item.content) {
+    return null;
+  }
+
   return (
     <motion.div
-      className="space-y-6"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="w-full"
     >
-      {chunks.map((chunk, index) => (
-        <ChunkRenderer
-          key={index}
-          chunk={chunk}
-          debouncedSearchTerm=""
-          onImageClick={() => {}}
-        />
-      ))}
+      <Card>
+        <CardContent className="prose dark:prose-invert max-w-none p-6">
+          <div dangerouslySetInnerHTML={{ __html: item.content }} />
+        </CardContent>
+      </Card>
     </motion.div>
-  )
+  );
 }
