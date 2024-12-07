@@ -160,18 +160,31 @@ export default function DynamicContent() {
           onClick={() => handleMenuClick(item, path)}
         >
           {hasSubmenus && (
-            <motion.div
-              initial={{ rotate: 0 }}
-              animate={{ rotate: isExpanded ? 90 : 0 }}
-              transition={{ duration: 0.3 }}
-              className="mr-2"
-            >
-              {isExpanded ? (
-                <FolderOpen className="h-4 w-4" />
-              ) : (
-                <Folder className="h-4 w-4" />
-              )}
-            </motion.div>
+            <div className="mr-2">
+              <AnimatePresence mode="wait">
+                {isExpanded ? (
+                  <motion.div
+                    key="open"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <FolderOpen className="h-4 w-4" />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="closed"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Folder className="h-4 w-4" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           )}
           {displayName}
         </Button>
