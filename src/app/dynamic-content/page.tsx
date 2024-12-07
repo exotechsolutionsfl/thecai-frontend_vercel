@@ -114,7 +114,11 @@ export default function DynamicContent() {
       setActiveContent(null);
     } else {
       setExpandedMenus([...expandedMenus, menuItem.name]);
-      setActiveContent(menuItem);
+      if (menuItem.content) {
+        setActiveContent(menuItem);
+      } else if (!menuItem.submenus) {
+        fetchMenuData(menuItem.name, menuItem.top_menu);
+      }
     }
   };
 
