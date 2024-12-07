@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronRight, ChevronDown } from 'lucide-react'
+import { ChevronRight, Folder, FolderOpen } from 'lucide-react'
 import { apiFetch } from '@api/api'
 import { Button } from "@/components/ui/Button"
 import { Card, CardContent } from "@/components/ui/Card"
@@ -156,11 +156,22 @@ export default function DynamicContent() {
       >
         <Button
           variant="ghost"
-          className={`w-full justify-start pl-${level * 4} ${isExpanded ? 'font-bold' : ''}`}
+          className={`w-full justify-start pl-${level * 4} ${isExpanded ? 'font-bold' : ''} hover:bg-accent/50 transition-colors duration-200`}
           onClick={() => handleMenuClick(item, path)}
         >
           {hasSubmenus && (
-            isExpanded ? <ChevronDown className="mr-2 h-4 w-4" /> : <ChevronRight className="mr-2 h-4 w-4" />
+            <motion.div
+              initial={{ rotate: 0 }}
+              animate={{ rotate: isExpanded ? 0 : 0 }}
+              transition={{ duration: 0.3 }}
+              className="mr-2"
+            >
+              {isExpanded ? (
+                <FolderOpen className="h-4 w-4" />
+              ) : (
+                <Folder className="h-4 w-4" />
+              )}
+            </motion.div>
           )}
           {displayName}
         </Button>
