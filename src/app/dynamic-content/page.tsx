@@ -122,15 +122,16 @@ export default function DynamicContent() {
         return prevExpandedMenus.filter(name => !name.startsWith(menuItem.name));
       } else {
         // Expand this menu
-        const newExpandedMenus = [...prevExpandedMenus, menuItem.name];
-        if (menuItem.content) {
-          setActiveContent(menuItem);
-        } else if (!menuItem.submenus) {
-          fetchMenuData(menuItem.name, menuItem.top_menu);
-        }
-        return newExpandedMenus;
+        return [...prevExpandedMenus, menuItem.name];
       }
     });
+
+    if (menuItem.content) {
+      setActiveContent(menuItem);
+    } else if (!menuItem.submenus) {
+      fetchMenuData(menuItem.name, menuItem.top_menu);
+    }
+    
     scrollToMenuItem(menuItem.name);
   };
 
