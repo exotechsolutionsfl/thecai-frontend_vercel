@@ -12,11 +12,13 @@ import { CurlyBrace } from '@/components/CurlyBrace'
 
 interface MenuItem {
   name: string
+  parent_name?: string
+  top_menu?: string
   submenus?: MenuItem[]
   content?: {
-    text: string
-    image?: string
-  }
+    text_1?: string
+    image_1?: string
+  }[]
 }
 
 export default function DynamicContent() {
@@ -129,6 +131,7 @@ export default function DynamicContent() {
     const isExpanded = expandedMenus.includes(item.name)
     const hasSubmenus = item.submenus && item.submenus.length > 0
     const isActive = activeContent === item
+    const displayName = item.parent_name || item.name
 
     return (
       <motion.div
@@ -146,10 +149,10 @@ export default function DynamicContent() {
         <Button
           variant="ghost"
           className={`w-full justify-start pl-${level * 4} ${isExpanded ? 'font-bold' : ''}`}
-          onClick={() => handleMenuClick(item, topMenu || item.name)}
+          onClick={() => handleMenuClick(item, topMenu || item.top_menu || item.name)}
         >
           <ChevronRight className="mr-2 h-4 w-4" />
-          {item.name}
+          {displayName}
         </Button>
         <AnimatePresence>
           {isExpanded && (
@@ -161,7 +164,7 @@ export default function DynamicContent() {
                 transition={{ duration: 0.3 }}
                 className="ml-4"
               >
-                {hasSubmenus && item.submenus!.map(subItem => renderMenuItem(subItem, level + 1, topMenu || item.name))}
+                {hasSubmenus && item.submenus!.map(subItem => renderMenuItem(subItem, level + 1, topMenu || item.top_menu || item.name))}
               </motion.div>
             </CurlyBrace>
           )}
@@ -170,21 +173,27 @@ export default function DynamicContent() {
     )
   }
 
-  const renderContent = (content: { text: string; image?: string }) => {
+  const renderContent = (content: MenuItem['content']) => {
+    if (!content || content.length === 0) return null;
+
     return (
       <Card className="mt-2 mb-4">
         <CardContent className="p-4">
-          <p className="mb-4">{content.text}</p>
-          {content.image && (
-            <div className="relative h-64 w-full">
-              <Image
-                src={content.image}
-                alt="Content image"
-                layout="fill"
-                objectFit="contain"
-              />
+          {content.map((item, index) => (
+            <div key={index} className="mb-4">
+              {item.text_1 && <p className="mb-4">{item.text_1}</p>}
+              {item.image_1 && (
+                <div className="relative h-64 w-full">
+                  <Image
+                    src={item.image_1}
+                    alt={`Content image ${index + 1}`}
+                    layout="fill"
+                    objectFit="contain"
+                  />
+                </div>
+              )}
             </div>
-          )}
+          ))}
         </CardContent>
       </Card>
     )
@@ -244,7 +253,7 @@ export default function DynamicContent() {
                   <X className="h-4 w-4" />
                 </Button>
               </div>
-              <h2 className="text-xl font-semibold mb-4">{activeContent.name}</h2>
+              <h2 className="text-xl font-semibold mb-4">{activeContent.parent_name || activeContent.name}</h2>
               {activeContent.content && renderContent(activeContent.content)}
             </motion.div>
           )}
