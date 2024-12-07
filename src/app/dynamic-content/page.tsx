@@ -108,6 +108,13 @@ export default function DynamicContent() {
     })
   }
 
+  const scrollToMenuItem = (itemName: string) => {
+    const element = document.getElementById(itemName);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   const handleMenuClick = (menuItem: MenuItem) => {
     if (expandedMenus.includes(menuItem.name)) {
       setExpandedMenus(expandedMenus.filter(name => name !== menuItem.name));
@@ -120,6 +127,7 @@ export default function DynamicContent() {
         fetchMenuData(menuItem.name, menuItem.top_menu);
       }
     }
+    scrollToMenuItem(menuItem.name);
   };
 
 
@@ -127,10 +135,12 @@ export default function DynamicContent() {
     const isExpanded = expandedMenus.includes(item.name);
     const hasSubmenus = item.submenus && item.submenus.length > 0;
     const isActive = activeContent === item;
+    const isLastSubmenu = item.content && item.content.length > 0;
 
     return (
       <motion.div
         key={item.name}
+        id={item.name}
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: -20 }}
@@ -160,7 +170,7 @@ export default function DynamicContent() {
                 className="ml-4"
               >
                 {hasSubmenus && item.submenus!.map(subItem => renderMenuItem(subItem, level + 1))}
-                {item.content && renderContent(item.content)}
+                {isLastSubmenu && renderContent(item.content!, item.name)}
               </motion.div>
             </CurlyBrace>
           )}
@@ -169,10 +179,11 @@ export default function DynamicContent() {
     )
   }
 
-  const renderContent = (content: { [key: string]: string }[]) => {
+  const renderContent = (content: { [key: string]: string }[], parentName: string) => {
     return (
       <Card className="mt-2 mb-4">
         <CardContent className="p-4">
+          <h3 className="text-lg font-semibold mb-2">{parentName}</h3>
           {content.map((item, index) => (
             <div key={index} className="mb-4">
               {Object.entries(item).map(([key, value]) => {
