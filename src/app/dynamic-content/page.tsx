@@ -116,17 +116,21 @@ export default function DynamicContent() {
   };
 
   const handleMenuClick = (menuItem: MenuItem) => {
-    if (expandedMenus.includes(menuItem.name)) {
-      setExpandedMenus(expandedMenus.filter(name => name !== menuItem.name));
-      setActiveContent(null);
-    } else {
-      setExpandedMenus([...expandedMenus, menuItem.name]);
-      if (menuItem.content) {
-        setActiveContent(menuItem);
-      } else if (!menuItem.submenus) {
-        fetchMenuData(menuItem.name, menuItem.top_menu);
+    setExpandedMenus(prevExpandedMenus => {
+      if (prevExpandedMenus.includes(menuItem.name)) {
+        // Collapse this menu and all its submenus
+        return prevExpandedMenus.filter(name => !name.startsWith(menuItem.name));
+      } else {
+        // Expand this menu
+        const newExpandedMenus = [...prevExpandedMenus, menuItem.name];
+        if (menuItem.content) {
+          setActiveContent(menuItem);
+        } else if (!menuItem.submenus) {
+          fetchMenuData(menuItem.name, menuItem.top_menu);
+        }
+        return newExpandedMenus;
       }
-    }
+    });
     scrollToMenuItem(menuItem.name);
   };
 
