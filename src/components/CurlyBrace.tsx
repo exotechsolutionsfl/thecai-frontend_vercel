@@ -2,10 +2,15 @@ import { motion } from 'framer-motion'
 
 interface CurlyBraceProps {
   isOpen: boolean
+  itemCount: number
   children: React.ReactNode
 }
 
-export const CurlyBrace: React.FC<CurlyBraceProps> = ({ isOpen, children }) => {
+export const CurlyBrace: React.FC<CurlyBraceProps> = ({ isOpen, itemCount, children }) => {
+  if (itemCount < 2) {
+    return <>{children}</>
+  }
+
   return (
     <motion.div
       initial={{ width: 0, opacity: 0 }}
