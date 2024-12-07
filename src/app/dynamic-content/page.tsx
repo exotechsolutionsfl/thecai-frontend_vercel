@@ -121,7 +121,7 @@ export default function DynamicContent() {
         // Collapse this menu and all its submenus
         return prevExpandedMenus.filter(name => !name.startsWith(menuItem.name));
       } else {
-        // Expand this menu
+        // Expand only this menu
         return [...prevExpandedMenus, menuItem.name];
       }
     });
@@ -162,7 +162,7 @@ export default function DynamicContent() {
           ) : (
             <ChevronRight className="mr-2 h-4 w-4" />
           )}
-          {item.name}
+          {item.name === 'chunk_text' ? item.parent_name : item.name}
         </Button>
         <AnimatePresence>
           {isExpanded && (
@@ -175,7 +175,7 @@ export default function DynamicContent() {
                 className="ml-4"
               >
                 {hasSubmenus && item.submenus!.map(subItem => renderMenuItem(subItem, level + 1))}
-                {isLastSubmenu && renderContent(item.content!, item.name)}
+                {isLastSubmenu && renderContent(item.content!, item.parent_name || item.name)}
               </motion.div>
             </CurlyBrace>
           )}
