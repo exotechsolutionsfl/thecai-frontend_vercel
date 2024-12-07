@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { motion } from 'framer-motion'
-import { ChevronRight, ChevronDown, Loader2 } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { ChevronRight, ChevronLeft, Loader2, X } from 'lucide-react'
 import { apiFetch } from '@api/api'
 import { Button } from "@/components/ui/Button"
 import { Card, CardContent } from "@/components/ui/Card"
@@ -28,10 +28,7 @@ export default function DynamicContent() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [expandedMenus, setExpandedMenus] = useState<string[]>([])
-
-  useEffect(() => {
-    fetchMenuData()
-  }, [])
+  const [activeMenu, setActiveMenu] = useState<MenuItem | null>(null)
 
   const fetchMenuData = async (menuPath: string | null = null, topMenu: string | null = null) => {
     setLoading(true)
@@ -62,6 +59,12 @@ export default function DynamicContent() {
     }
   }
 
+  const memoizedFetchMenuData = useCallback(fetchMenuData, [make, model, year])
+
+  useEffect(() => {
+    memoizedFetchMenuData()
+  }, [memoizedFetchMenuData])
+
   const updateMenuData = (newData: MenuItem[], menuPath: string) => {
     setMenuData(prevData => {
       const updateRecursive = (items: MenuItem[]): MenuItem[] => {
@@ -81,43 +84,48 @@ export default function DynamicContent() {
   const handleMenuClick = (menuItem: MenuItem, topMenu: string | null = null) => {
     if (expandedMenus.includes(menuItem.name)) {
       setExpandedMenus(expandedMenus.filter(name => name !== menuItem.name))
+      setActiveMenu(null)
     } else {
       setExpandedMenus([...expandedMenus, menuItem.name])
+      setActiveMenu(menuItem)
       if (!menuItem.submenus && !menuItem.content) {
         fetchMenuData(menuItem.name, topMenu)
       }
     }
   }
 
+  const handleBackClick = () => {
+    if (expandedMenus.length > 0) {
+      const newExpandedMenus = [...expandedMenus]
+      newExpandedMenus.pop()
+      setExpandedMenus(newExpandedMenus)
+      setActiveMenu(null)
+    }
+  }
+
   const renderMenuItem = (item: MenuItem, level: number = 0, topMenu: string | null = null) => {
     const isExpanded = expandedMenus.includes(item.name)
-    const hasSubmenus = item.submenus && item.submenus.length > 0
-    const hasContent = item.content !== undefined
 
     return (
-      <div key={item.name} className="mb-2">
+      <motion.div
+        key={item.name}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.3 }}
+        className={`mb-2 ${level > 0 ? 'ml-4' : ''}`}
+      >
         <Button
           variant="ghost"
-          className={`w-full justify-start pl-${level * 4} ${isExpanded ? 'font-bold' : ''}`}
+          className={`w-full justify-between ${isExpanded ? 'font-bold' : ''}`}
           onClick={() => handleMenuClick(item, topMenu || item.name)}
         >
-          {hasSubmenus || (!hasContent && !hasSubmenus) ? (
-            isExpanded ? <ChevronDown className="mr-2 h-4 w-4" /> : <ChevronRight className="mr-2 h-4 w-4" />
-          ) : null}
-          {item.name}
+          <span>{item.name}</span>
+          {(item.submenus || item.content) && (
+            <ChevronRight className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+          )}
         </Button>
-        {isExpanded && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            {hasSubmenus && item.submenus!.map(subItem => renderMenuItem(subItem, level + 1, topMenu || item.name))}
-            {hasContent && renderContent(item.content!)}
-          </motion.div>
-        )}
-      </div>
+      </motion.div>
     )
   }
 
@@ -158,12 +166,51 @@ export default function DynamicContent() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Dynamic Content</h1>
-      <div className="space-y-4">
-        {menuData.map(item => renderMenuItem(item))}
+    <div className="container mx-auto px-4 py-8 flex">
+      <div className="w-1/3 pr-4">
+        <h1 className="text-2xl font-bold mb-6">Dynamic Content</h1>
+        <div className="space-y-4">
+          {menuData.map(item => renderMenuItem(item))}
+        </div>
       </div>
+      <AnimatePresence>
+        {activeMenu && (
+          <motion.div
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: '66.666667%', opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="w-2/3 pl-4 relative"
+          >
+            <div className="bg-background rounded-lg p-6 shadow-lg relative">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute top-2 left-2"
+                onClick={handleBackClick}
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Back
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute top-2 right-2"
+                onClick={() => setActiveMenu(null)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+              <h2 className="text-xl font-bold mb-4 mt-8">{activeMenu.name}</h2>
+              {activeMenu.content && renderContent(activeMenu.content)}
+              {activeMenu.submenus && (
+                <div className="space-y-2">
+                  {activeMenu.submenus.map(subItem => renderMenuItem(subItem, 1, activeMenu.name))}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
-
