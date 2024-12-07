@@ -162,7 +162,7 @@ export default function DynamicContent() {
           {hasSubmenus && (
             <motion.div
               initial={{ rotate: 0 }}
-              animate={{ rotate: isExpanded ? 0 : 0 }}
+              animate={{ rotate: isExpanded ? 90 : 0 }}
               transition={{ duration: 0.3 }}
               className="mr-2"
             >
