@@ -137,8 +137,12 @@ export default function DynamicContent() {
     const isExpanded = expandedMenus.includes(path);
     const hasSubmenus = item.submenus && item.submenus.length > 0;
     const isActive = activeContent === item;
-    const isLastSubmenu = item.content && item.content.length > 0;
-    const displayName = item.name === 'chunk_text' ? (item.parent_name || item.name) : item.name;
+    const isChunkText = item.name === 'chunk_text';
+    const displayName = isChunkText ? item.parent_name || '' : item.name;
+
+    if (isChunkText) {
+      return item.content ? renderContent(item.content, displayName) : null;
+    }
 
     return (
       <motion.div
@@ -173,7 +177,7 @@ export default function DynamicContent() {
                 {hasSubmenus && item.submenus!.map(subItem => 
                   renderMenuItem(subItem, `${path}/${subItem.name}`, level + 1)
                 )}
-                {isLastSubmenu && item.content && renderContent(item.content, displayName)}
+                {!hasSubmenus && item.content && renderContent(item.content, displayName)}
               </motion.div>
             </CurlyBrace>
           )}
