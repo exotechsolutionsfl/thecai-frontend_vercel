@@ -29,7 +29,7 @@ export default function DynamicContent() {
   const [menuData, setMenuData] = useState<MenuItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [expandedMenus, setExpandedMenus] = useState<string[]>([])
+  const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
   const [activeContent, setActiveContent] = useState<MenuItem | null>(null)
   const contentRef = useRef<HTMLDivElement>(null)
 
@@ -94,12 +94,14 @@ export default function DynamicContent() {
 
   const updateMenuData = (newData: MenuItem[], menuPath: string) => {
     setMenuData(prevData => {
-      const updateRecursive = (items: MenuItem[]): MenuItem[] => {
+      const updateRecursive = (items: MenuItem[], parentPath: string = ''): MenuItem[] => {
         return items.map(item => {
+          const fullPath = parentPath ? `${parentPath}/${item.name}` : item.name;
           if (item.name === menuPath) {
+            setExpandedMenus(prev => [...prev, fullPath]);
             return { ...item, submenus: newData }
           } else if (item.submenus) {
-            return { ...item, submenus: updateRecursive(item.submenus) }
+            return { ...item, submenus: updateRecursive(item.submenus, fullPath) }
           }
           return item
         })
@@ -119,7 +121,7 @@ export default function DynamicContent() {
     setExpandedMenus(prevExpandedMenus => {
       if (prevExpandedMenus.includes(menuItem.name)) {
         // Collapse this menu and all its submenus
-        return prevExpandedMenus.filter(name => !name.startsWith(menuItem.name));
+        return prevExpandedMenus.filter(name => !name.startsWith(`${menuItem.name}/`));
       } else {
         // Expand only this menu
         return [...prevExpandedMenus, menuItem.name];
@@ -157,11 +159,9 @@ export default function DynamicContent() {
           className={`w-full justify-start pl-${level * 4} ${isExpanded ? 'font-bold' : ''}`}
           onClick={() => handleMenuClick(item)}
         >
-          {isExpanded ? (
-            <ChevronDown className="mr-2 h-4 w-4" />
-          ) : (
-            <ChevronRight className="mr-2 h-4 w-4" />
-          )}
+          {hasSubmenus || !isLastSubmenu ? (
+            isExpanded ? <ChevronDown className="mr-2 h-4 w-4" /> : <ChevronRight className="mr-2 h-4 w-4" />
+          ) : null}
           {item.name === 'chunk_text' ? item.parent_name : item.name}
         </Button>
         <AnimatePresence>
