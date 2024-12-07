@@ -11,12 +11,14 @@ import Image from 'next/image'
 import { CurlyBrace } from '@/components/CurlyBrace'
 
 interface MenuItem {
-  name: string
-  submenus?: MenuItem[]
+  name: string;
+  parent_name?: string;
+  top_menu?: string;
+  submenus?: MenuItem[];
   content?: {
-    text: string
-    image?: string
-  }
+    text_1: string;
+    image_1: string;
+  }[];
 }
 
 export default function DynamicContent() {
@@ -109,26 +111,26 @@ export default function DynamicContent() {
 
   const handleMenuClick = (menuItem: MenuItem, topMenu: string | null = null) => {
     if (expandedMenus.includes(menuItem.name)) {
-      setExpandedMenus(expandedMenus.filter(name => name !== menuItem.name))
-      setActiveContent(null)
+      setExpandedMenus(expandedMenus.filter(name => name !== menuItem.name));
+      setActiveContent(null);
     } else {
-      setExpandedMenus([...expandedMenus, menuItem.name])
-      if (!menuItem.submenus && !menuItem.content) {
-        fetchMenuData(menuItem.name, topMenu)
-      }
-      if (menuItem.content) {
-        setActiveContent(menuItem)
+      setExpandedMenus([...expandedMenus, menuItem.name]);
+      if (!menuItem.submenus && menuItem.content) {
+        setActiveContent(menuItem);
+      } else if (!menuItem.submenus && !menuItem.content) {
+        fetchMenuData(menuItem.name, topMenu);
       } else {
-        setActiveContent(null)
+        setActiveContent(null);
       }
     }
-  }
+  };
 
 
   const renderMenuItem = (item: MenuItem, level: number = 0, topMenu: string | null = null) => {
-    const isExpanded = expandedMenus.includes(item.name)
-    const hasSubmenus = item.submenus && item.submenus.length > 0
-    const isActive = activeContent === item
+    const isExpanded = expandedMenus.includes(item.name);
+    const hasSubmenus = item.submenus && item.submenus.length > 0;
+    const hasContent = item.content && item.content.length > 0;
+    const isActive = activeContent === item;
 
     return (
       <motion.div
@@ -162,6 +164,7 @@ export default function DynamicContent() {
                 className="ml-4"
               >
                 {hasSubmenus && item.submenus!.map(subItem => renderMenuItem(subItem, level + 1, topMenu || item.name))}
+                {hasContent && renderContent(item.content)}
               </motion.div>
             </CurlyBrace>
           )}
@@ -170,25 +173,31 @@ export default function DynamicContent() {
     )
   }
 
-  const renderContent = (content: { text: string; image?: string }) => {
+  const renderContent = (content: MenuItem['content']) => {
+    if (!content || content.length === 0) return null;
+
     return (
       <Card className="mt-2 mb-4">
         <CardContent className="p-4">
-          <p className="mb-4">{content.text}</p>
-          {content.image && (
-            <div className="relative h-64 w-full">
-              <Image
-                src={content.image}
-                alt="Content image"
-                layout="fill"
-                objectFit="contain"
-              />
+          {content.map((item, index) => (
+            <div key={index} className="mb-4">
+              <p className="mb-2">{item.text_1}</p>
+              {item.image_1 && (
+                <div className="relative h-64 w-full">
+                  <Image
+                    src={item.image_1}
+                    alt={`Content image ${index + 1}`}
+                    layout="fill"
+                    objectFit="contain"
+                  />
+                </div>
+              )}
             </div>
-          )}
+          ))}
         </CardContent>
       </Card>
-    )
-  }
+    );
+  };
 
   if (loading && menuData.length === 0) {
     return (
