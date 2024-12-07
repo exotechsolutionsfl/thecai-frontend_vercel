@@ -11,7 +11,6 @@ import Image from 'next/image'
 import { CurlyBrace } from '@/components/CurlyBrace'
 
 interface MenuItem {
-  id: string;
   name: string;
   parent_name?: string;
   top_menu?: string;
@@ -73,21 +72,11 @@ export default function DynamicContent() {
       if (topMenu) params.append('top_menu', topMenu)
 
       const data = await apiFetch(`api/dynamic-menu?${params.toString()}`)
-    
-      const addIds = (items: MenuItem[]): MenuItem[] => {
-        return items.map(item => ({
-          ...item,
-          id: `${item.name}-${Math.random().toString(36).substr(2, 9)}`,
-          submenus: item.submenus ? addIds(item.submenus) : undefined
-        }))
-      }
-
-      const dataWithIds = addIds(data)
-    
+      
       if (menuPath) {
-        updateMenuData(dataWithIds, menuPath)
+        updateMenuData(data, menuPath)
       } else {
-        setMenuData(dataWithIds)
+        setMenuData(data)
       }
     } catch (err) {
       setError('Failed to fetch menu data. Please try again.')
@@ -124,14 +113,14 @@ export default function DynamicContent() {
     }
   };
 
-  const handleMenuClick = (menuItem: MenuItem) => {
+  const handleMenuClick = (menuItem: MenuItem, path: string) => {
     setExpandedMenus(prevExpandedMenus => {
-      if (prevExpandedMenus.includes(menuItem.id)) {
+      if (prevExpandedMenus.includes(path)) {
         // Collapse this menu and all its submenus
-        return prevExpandedMenus.filter(expandedId => expandedId !== menuItem.id);
+        return prevExpandedMenus.filter(expandedPath => !expandedPath.startsWith(path));
       } else {
         // Expand this menu
-        return [...prevExpandedMenus, menuItem.id];
+        return [...prevExpandedMenus, path];
       }
     });
 
@@ -141,20 +130,24 @@ export default function DynamicContent() {
       fetchMenuData(menuItem.name, menuItem.top_menu);
     }
     
-    scrollToMenuItem(menuItem.id);
+    scrollToMenuItem(menuItem.name);
   };
 
-  const renderMenuItem = (item: MenuItem, level: number = 0) => {
-    const isExpanded = expandedMenus.includes(item.id);
+  const renderMenuItem = (item: MenuItem, path: string = '', level: number = 0) => {
+    const isExpanded = expandedMenus.includes(path);
     const hasSubmenus = item.submenus && item.submenus.length > 0;
     const isActive = activeContent === item;
-    const isLastSubmenu = item.content && item.content.length > 0;
-    const displayName = item.name === 'chunk_text' ? (item.parent_name || item.name) : item.name;
+    const isChunkText = item.name === 'chunk_text';
+    const displayName = isChunkText ? item.parent_name || '' : item.name;
+
+    if (isChunkText) {
+      return item.content ? renderContent(item.content, displayName) : null;
+    }
 
     return (
       <motion.div
-        key={item.id}
-        id={item.id}
+        key={path}
+        id={item.name}
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: -20 }}
@@ -164,7 +157,7 @@ export default function DynamicContent() {
         <Button
           variant="ghost"
           className={`w-full justify-start pl-${level * 4} ${isExpanded ? 'font-bold' : ''}`}
-          onClick={() => handleMenuClick(item)}
+          onClick={() => handleMenuClick(item, path)}
         >
           {hasSubmenus && (
             isExpanded ? <ChevronDown className="mr-2 h-4 w-4" /> : <ChevronRight className="mr-2 h-4 w-4" />
@@ -172,8 +165,8 @@ export default function DynamicContent() {
           {displayName}
         </Button>
         <AnimatePresence>
-          {isExpanded && (hasSubmenus || isLastSubmenu) && (
-            <CurlyBrace isOpen={isExpanded} itemCount={hasSubmenus ? item.submenus!.length : (item.content ? item.content.length : 0)}>
+          {isExpanded && (
+            <CurlyBrace isOpen={isExpanded}>
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -182,9 +175,9 @@ export default function DynamicContent() {
                 className="ml-4"
               >
                 {hasSubmenus && item.submenus!.map(subItem => 
-                  renderMenuItem(subItem, level + 1)
+                  renderMenuItem(subItem, `${path}/${subItem.name}`, level + 1)
                 )}
-                {isLastSubmenu && item.content && renderContent(item.content, displayName)}
+                {!hasSubmenus && item.content && renderContent(item.content, displayName)}
               </motion.div>
             </CurlyBrace>
           )}
@@ -249,7 +242,7 @@ export default function DynamicContent() {
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">Dynamic Content</h1>
       <div className="space-y-4">
-        {menuData.map(item => renderMenuItem(item))}
+        {menuData.map(item => renderMenuItem(item, item.name))}
       </div>
     </div>
   )
