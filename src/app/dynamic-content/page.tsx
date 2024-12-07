@@ -1,13 +1,14 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronRight, ChevronLeft, Loader2 } from 'lucide-react'
+import { ChevronRight, ChevronLeft, X } from 'lucide-react'
 import { apiFetch } from '@api/api'
 import { Button } from "@/components/ui/Button"
 import { Card, CardContent } from "@/components/ui/Card"
 import Image from 'next/image'
+import { CurlyBrace } from '@/components/CurlyBrace'
 
 interface MenuItem {
   name: string
@@ -29,6 +30,32 @@ export default function DynamicContent() {
   const [error, setError] = useState<string | null>(null)
   const [expandedMenus, setExpandedMenus] = useState<string[]>([])
   const [activeContent, setActiveContent] = useState<MenuItem | null>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
+
+  const handleBackClick = useCallback(() => {
+    setExpandedMenus(prevExpandedMenus => {
+      if (prevExpandedMenus.length > 0) {
+        const newExpandedMenus = prevExpandedMenus.slice(0, -1);
+        setActiveContent(null);
+        return newExpandedMenus;
+      }
+      return prevExpandedMenus;
+    });
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (contentRef.current && !contentRef.current.contains(event.target as Node)) {
+        handleBackClick();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [handleBackClick]);
+
 
   const fetchMenuData = useCallback(async (menuPath: string | null = null, topMenu: string | null = null) => {
     setLoading(true)
@@ -63,6 +90,7 @@ export default function DynamicContent() {
     fetchMenuData()
   }, [fetchMenuData])
 
+
   const updateMenuData = (newData: MenuItem[], menuPath: string) => {
     setMenuData(prevData => {
       const updateRecursive = (items: MenuItem[]): MenuItem[] => {
@@ -96,14 +124,6 @@ export default function DynamicContent() {
     }
   }
 
-  const handleBackClick = () => {
-    if (expandedMenus.length > 0) {
-      const newExpandedMenus = [...expandedMenus]
-      newExpandedMenus.pop()
-      setExpandedMenus(newExpandedMenus)
-      setActiveContent(null)
-    }
-  }
 
   const renderMenuItem = (item: MenuItem, level: number = 0, topMenu: string | null = null) => {
     const isExpanded = expandedMenus.includes(item.name)
@@ -118,33 +138,32 @@ export default function DynamicContent() {
         exit={{ opacity: 0, x: -20 }}
         transition={{ duration: 0.3 }}
         className={`mb-2 ${isActive ? 'z-10' : 'z-0'}`}
-        style={{ filter: isActive ? 'none' : `blur(${level * 0.5}px)` }}
+        style={{
+          filter: isActive || isExpanded ? 'none' : `blur(${(expandedMenus.length - level) * 0.5}px)`,
+          transition: 'filter 0.3s ease-in-out',
+        }}
       >
         <Button
           variant="ghost"
           className={`w-full justify-start pl-${level * 4} ${isExpanded ? 'font-bold' : ''}`}
           onClick={() => handleMenuClick(item, topMenu || item.name)}
         >
-          <motion.div
-            initial={{ rotate: 0 }}
-            animate={{ rotate: isExpanded ? 90 : 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <ChevronRight className="mr-2 h-4 w-4" />
-          </motion.div>
+          <ChevronRight className="mr-2 h-4 w-4" />
           {item.name}
         </Button>
         <AnimatePresence>
           {isExpanded && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-              className="pl-4 border-l-2 border-gray-200 ml-2"
-            >
-              {hasSubmenus && item.submenus!.map(subItem => renderMenuItem(subItem, level + 1, topMenu || item.name))}
-            </motion.div>
+            <CurlyBrace isOpen={isExpanded}>
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+                className="ml-4"
+              >
+                {hasSubmenus && item.submenus!.map(subItem => renderMenuItem(subItem, level + 1, topMenu || item.name))}
+              </motion.div>
+            </CurlyBrace>
           )}
         </AnimatePresence>
       </motion.div>
@@ -174,7 +193,12 @@ export default function DynamicContent() {
   if (loading && menuData.length === 0) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <Loader2 className="h-8 w-8 animate-spin" />
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+        >
+          <ChevronRight className="h-8 w-8 text-primary" />
+        </motion.div>
       </div>
     )
   }
@@ -188,14 +212,14 @@ export default function DynamicContent() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 flex">
-      <div className="w-1/3 pr-4">
+    <div className="container mx-auto px-4 py-8 flex flex-col md:flex-row">
+      <div className="w-full md:w-1/3 pr-4 mb-8 md:mb-0">
         <h1 className="text-2xl font-bold mb-6">Dynamic Content</h1>
         <div className="space-y-4">
           {menuData.map(item => renderMenuItem(item))}
         </div>
       </div>
-      <div className="w-2/3 pl-4">
+      <div className="w-full md:w-2/3 pl-4" ref={contentRef}>
         <AnimatePresence mode="wait">
           {activeContent && (
             <motion.div
@@ -205,14 +229,21 @@ export default function DynamicContent() {
               exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.3 }}
             >
-              <Button
-                variant="ghost"
-                onClick={handleBackClick}
-                className="mb-4"
-              >
-                <ChevronLeft className="mr-2 h-4 w-4" />
-                Back
-              </Button>
+              <div className="flex justify-between items-center mb-4">
+                <Button
+                  variant="ghost"
+                  onClick={handleBackClick}
+                >
+                  <ChevronLeft className="mr-2 h-4 w-4" />
+                  Back
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={handleBackClick}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
               <h2 className="text-xl font-semibold mb-4">{activeContent.name}</h2>
               {activeContent.content && renderContent(activeContent.content)}
             </motion.div>
