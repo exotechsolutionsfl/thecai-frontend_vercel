@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronRight, ChevronLeft, X } from 'lucide-react'
+import { ChevronRight, ChevronDown } from 'lucide-react'
 import { apiFetch } from '@api/api'
 import { Button } from "@/components/ui/Button"
 import { Card, CardContent } from "@/components/ui/Card"
@@ -16,8 +16,7 @@ interface MenuItem {
   top_menu?: string;
   submenus?: MenuItem[];
   content?: {
-    text_1: string;
-    image_1: string;
+    [key: string]: string;
   }[];
 }
 
@@ -109,27 +108,20 @@ export default function DynamicContent() {
     })
   }
 
-  const handleMenuClick = (menuItem: MenuItem, topMenu: string | null = null) => {
+  const handleMenuClick = (menuItem: MenuItem) => {
     if (expandedMenus.includes(menuItem.name)) {
       setExpandedMenus(expandedMenus.filter(name => name !== menuItem.name));
       setActiveContent(null);
     } else {
       setExpandedMenus([...expandedMenus, menuItem.name]);
-      if (!menuItem.submenus && menuItem.content) {
-        setActiveContent(menuItem);
-      } else if (!menuItem.submenus && !menuItem.content) {
-        fetchMenuData(menuItem.name, topMenu);
-      } else {
-        setActiveContent(null);
-      }
+      setActiveContent(menuItem);
     }
   };
 
 
-  const renderMenuItem = (item: MenuItem, level: number = 0, topMenu: string | null = null) => {
+  const renderMenuItem = (item: MenuItem, level: number = 0) => {
     const isExpanded = expandedMenus.includes(item.name);
     const hasSubmenus = item.submenus && item.submenus.length > 0;
-    const hasContent = item.content && item.content.length > 0;
     const isActive = activeContent === item;
 
     return (
@@ -140,17 +132,17 @@ export default function DynamicContent() {
         exit={{ opacity: 0, x: -20 }}
         transition={{ duration: 0.3 }}
         className={`mb-2 ${isActive ? 'z-10' : 'z-0'}`}
-        style={{
-          filter: isActive || isExpanded ? 'none' : `blur(${(expandedMenus.length - level) * 0.5}px)`,
-          transition: 'filter 0.3s ease-in-out',
-        }}
       >
         <Button
           variant="ghost"
           className={`w-full justify-start pl-${level * 4} ${isExpanded ? 'font-bold' : ''}`}
-          onClick={() => handleMenuClick(item, topMenu || item.name)}
+          onClick={() => handleMenuClick(item)}
         >
-          <ChevronRight className="mr-2 h-4 w-4" />
+          {isExpanded ? (
+            <ChevronDown className="mr-2 h-4 w-4" />
+          ) : (
+            <ChevronRight className="mr-2 h-4 w-4" />
+          )}
           {item.name}
         </Button>
         <AnimatePresence>
@@ -163,8 +155,8 @@ export default function DynamicContent() {
                 transition={{ duration: 0.3 }}
                 className="ml-4"
               >
-                {hasSubmenus && item.submenus!.map(subItem => renderMenuItem(subItem, level + 1, topMenu || item.name))}
-                {hasContent && renderContent(item.content)}
+                {hasSubmenus && item.submenus!.map(subItem => renderMenuItem(subItem, level + 1))}
+                {item.content && renderContent(item.content)}
               </motion.div>
             </CurlyBrace>
           )}
@@ -173,25 +165,29 @@ export default function DynamicContent() {
     )
   }
 
-  const renderContent = (content: MenuItem['content']) => {
-    if (!content || content.length === 0) return null;
-
+  const renderContent = (content: { [key: string]: string }[]) => {
     return (
       <Card className="mt-2 mb-4">
         <CardContent className="p-4">
           {content.map((item, index) => (
             <div key={index} className="mb-4">
-              <p className="mb-2">{item.text_1}</p>
-              {item.image_1 && (
-                <div className="relative h-64 w-full">
-                  <Image
-                    src={item.image_1}
-                    alt={`Content image ${index + 1}`}
-                    layout="fill"
-                    objectFit="contain"
-                  />
-                </div>
-              )}
+              {Object.entries(item).map(([key, value]) => {
+                if (key.startsWith('text')) {
+                  return <p key={key} className="mb-2">{value}</p>;
+                } else if (key.startsWith('image')) {
+                  return (
+                    <div key={key} className="relative h-64 w-full mb-2">
+                      <Image
+                        src={value}
+                        alt={`Content image ${index + 1}`}
+                        layout="fill"
+                        objectFit="contain"
+                      />
+                    </div>
+                  );
+                }
+                return null;
+              })}
             </div>
           ))}
         </CardContent>
@@ -221,43 +217,10 @@ export default function DynamicContent() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 flex flex-col md:flex-row">
-      <div className="w-full md:w-1/3 pr-4 mb-8 md:mb-0">
-        <h1 className="text-2xl font-bold mb-6">Dynamic Content</h1>
-        <div className="space-y-4">
-          {menuData.map(item => renderMenuItem(item))}
-        </div>
-      </div>
-      <div className="w-full md:w-2/3 pl-4" ref={contentRef}>
-        <AnimatePresence mode="wait">
-          {activeContent && (
-            <motion.div
-              key={activeContent.name}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              transition={{ duration: 0.3 }}
-            >
-              <div className="flex justify-between items-center mb-4">
-                <Button
-                  variant="ghost"
-                  onClick={handleBackClick}
-                >
-                  <ChevronLeft className="mr-2 h-4 w-4" />
-                  Back
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={handleBackClick}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-              <h2 className="text-xl font-semibold mb-4">{activeContent.name}</h2>
-              {activeContent.content && renderContent(activeContent.content)}
-            </motion.div>
-          )}
-        </AnimatePresence>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold mb-6">Dynamic Content</h1>
+      <div className="space-y-4">
+        {menuData.map(item => renderMenuItem(item))}
       </div>
     </div>
   )
