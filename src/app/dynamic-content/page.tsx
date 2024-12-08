@@ -167,29 +167,11 @@ export default function DynamicContent() {
         >
           {hasSubmenus && (
             <div className="mr-2">
-              <AnimatePresence mode="wait">
-                {isExpanded ? (
-                  <motion.div
-                    key="open"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <FolderOpen className="h-4 w-4" />
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="closed"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <Folder className="h-4 w-4" />
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {isExpanded ? (
+                <FolderOpen className="h-4 w-4" />
+              ) : (
+                <Folder className="h-4 w-4" />
+              )}
             </div>
           )}
           {displayName}
@@ -204,10 +186,14 @@ export default function DynamicContent() {
                 transition={{ duration: 0.3 }}
                 className="ml-4"
               >
-                {hasSubmenus && item.submenus!.map(subItem => 
-                  renderMenuItem(subItem, `${path}/${subItem.name}`, level + 1)
+                {isExpanded && (
+                  <>
+                    {hasSubmenus && item.submenus!.map(subItem => 
+                      renderMenuItem(subItem, `${path}/${subItem.name}`, level + 1)
+                    )}
+                    {!hasSubmenus && item.content && renderContent(item.content, displayName)}
+                  </>
                 )}
-                {!hasSubmenus && item.content && renderContent(item.content, displayName)}
               </motion.div>
             </CurlyBrace>
           )}
