@@ -166,14 +166,10 @@ export default function DynamicContent() {
           onClick={() => handleMenuClick(item, path)}
         >
           <div className="mr-2">
-            {hasSubmenus ? (
-              isExpanded ? (
-                <FolderOpen className="h-4 w-4" />
-              ) : (
-                <Folder className="h-4 w-4" />
-              )
+            {isExpanded ? (
+              <FolderOpen className="h-4 w-4" />
             ) : (
-              <ChevronRight className="h-4 w-4" />
+              <Folder className="h-4 w-4" />
             )}
           </div>
           {displayName}
