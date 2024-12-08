@@ -31,12 +31,14 @@ export default function DynamicContent() {
   const [error, setError] = useState<string | null>(null)
   const [expandedMenus, setExpandedMenus] = useState<string[]>([])
   const [activeContent, setActiveContent] = useState<MenuItem | null>(null)
+  const [lastOpenedMenu, setLastOpenedMenu] = useState<string | null>(null)
   const contentRef = useRef<HTMLDivElement>(null)
 
   const handleBackClick = useCallback(() => {
     setExpandedMenus(prevExpandedMenus => {
       if (prevExpandedMenus.length > 0) {
         const newExpandedMenus = prevExpandedMenus.slice(0, -1);
+        setLastOpenedMenu(newExpandedMenus[newExpandedMenus.length - 1] || null);
         setActiveContent(null);
         return newExpandedMenus;
       }
@@ -117,9 +119,12 @@ export default function DynamicContent() {
     setExpandedMenus(prevExpandedMenus => {
       if (prevExpandedMenus.includes(path)) {
         // Collapse this menu and all its submenus
-        return prevExpandedMenus.filter(expandedPath => !expandedPath.startsWith(path));
+        const newExpandedMenus = prevExpandedMenus.filter(expandedPath => !expandedPath.startsWith(path));
+        setLastOpenedMenu(newExpandedMenus[newExpandedMenus.length - 1] || null);
+        return newExpandedMenus;
       } else {
         // Expand this menu
+        setLastOpenedMenu(path);
         return [...prevExpandedMenus, path];
       }
     });
@@ -139,6 +144,7 @@ export default function DynamicContent() {
     const isActive = activeContent === item;
     const isChunkText = item.name === 'chunk_text';
     const displayName = isChunkText ? item.parent_name || '' : item.name;
+    const isLastOpened = path === lastOpenedMenu;
 
     if (isChunkText) {
       return item.content ? renderContent(item.content, displayName) : null;
@@ -159,36 +165,38 @@ export default function DynamicContent() {
           className={`w-full justify-start pl-${level * 4} ${isExpanded ? 'font-bold' : ''} hover:bg-accent/50 transition-colors duration-200`}
           onClick={() => handleMenuClick(item, path)}
         >
-          <div className="mr-2">
-            <AnimatePresence mode="wait">
-              {isExpanded ? (
-                <motion.div
-                  key="open"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <FolderOpen className="h-4 w-4" />
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="closed"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <Folder className="h-4 w-4" />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+          {hasSubmenus && (
+            <div className="mr-2">
+              <AnimatePresence mode="wait">
+                {isExpanded ? (
+                  <motion.div
+                    key="open"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <FolderOpen className="h-4 w-4" />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="closed"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Folder className="h-4 w-4" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
           {displayName}
         </Button>
         <AnimatePresence>
           {isExpanded && (
-            <CurlyBrace isOpen={isExpanded}>
+            <CurlyBrace isVisible={isLastOpened}>
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
