@@ -165,15 +165,17 @@ export default function DynamicContent() {
           className={`w-full justify-start pl-${level * 4} ${isExpanded ? 'font-bold' : ''} hover:bg-accent/50 transition-colors duration-200`}
           onClick={() => handleMenuClick(item, path)}
         >
-          {hasSubmenus && (
-            <div className="mr-2">
-              {isExpanded ? (
+          <div className="mr-2">
+            {hasSubmenus ? (
+              isExpanded ? (
                 <FolderOpen className="h-4 w-4" />
               ) : (
                 <Folder className="h-4 w-4" />
-              )}
-            </div>
-          )}
+              )
+            ) : (
+              <ChevronRight className="h-4 w-4" />
+            )}
+          </div>
           {displayName}
         </Button>
         <AnimatePresence>
