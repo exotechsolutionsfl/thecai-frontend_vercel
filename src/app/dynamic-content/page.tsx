@@ -13,6 +13,7 @@ import { CurlyBrace } from '@/components/CurlyBrace'
 interface MenuItem {
   uid: string;
   name: string;
+  type: 'menu' | 'chunk_text';
   parent_uid: string | null;
   top_menu?: string;
   submenus?: MenuItem[];
@@ -115,6 +116,11 @@ export default function DynamicContent() {
   };
 
   const handleMenuClick = (menuItem: MenuItem) => {
+    if (menuItem.type === 'chunk_text') {
+      setActiveContent(menuItem);
+      return;
+    }
+
     setExpandedMenus(prevExpandedMenus => {
       if (prevExpandedMenus.includes(menuItem.uid)) {
         // Collapse this menu and all its submenus
@@ -128,9 +134,7 @@ export default function DynamicContent() {
       }
     });
 
-    if (menuItem.content) {
-      setActiveContent(menuItem);
-    } else if (!menuItem.submenus) {
+    if (!menuItem.submenus) {
       fetchMenuData(menuItem.uid);
     }
     
@@ -142,6 +146,10 @@ export default function DynamicContent() {
     const hasSubmenus = item.submenus && item.submenus.length > 0;
     const isActive = activeContent === item;
     const isLastOpened = item.uid === lastOpenedMenu;
+
+    if (item.type === 'chunk_text') {
+      return renderContent(item);
+    }
 
     return (
       <motion.div
@@ -182,7 +190,6 @@ export default function DynamicContent() {
                     {hasSubmenus && item.submenus!.map(subItem => 
                       renderMenuItem(subItem, level + 1)
                     )}
-                    {!hasSubmenus && item.content && renderContent(item.content, item.name)}
                   </>
                 )}
               </motion.div>
@@ -193,14 +200,24 @@ export default function DynamicContent() {
     )
   }
 
-  const renderContent = (content: { [key: string]: string }[], parentName: string) => {
+  const renderContent = (item: MenuItem) => {
+    if (!item.content || item.content.length === 0) {
+      return (
+        <Card className="mt-2 mb-4">
+          <CardContent className="p-4">
+            <p>No content available for this item.</p>
+          </CardContent>
+        </Card>
+      );
+    }
+
     return (
       <Card className="mt-2 mb-4">
         <CardContent className="p-4">
-          <h3 className="text-lg font-semibold mb-2">{parentName}</h3>
-          {content.map((item, index) => (
+          <h3 className="text-lg font-semibold mb-2">{item.name}</h3>
+          {item.content.map((contentItem, index) => (
             <div key={index} className="mb-4">
-              {Object.entries(item).map(([key, value]) => {
+              {Object.entries(contentItem).map(([key, value]) => {
                 if (key.startsWith('text')) {
                   return <p key={key} className="mb-2">{value}</p>;
                 } else if (key.startsWith('image')) {
