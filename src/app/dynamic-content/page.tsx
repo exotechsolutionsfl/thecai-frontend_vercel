@@ -11,8 +11,9 @@ import Image from 'next/image'
 import { CurlyBrace } from '@/components/CurlyBrace'
 
 interface MenuItem {
+  uid: string;
   name: string;
-  parent_name?: string;
+  parent_uid: string | null;
   top_menu?: string;
   submenus?: MenuItem[];
   content?: {
@@ -59,7 +60,7 @@ export default function DynamicContent() {
     };
   }, [handleBackClick]);
 
-  const fetchMenuData = useCallback(async (menuPath: string | null = null, topMenu: string | null = null) => {
+  const fetchMenuData = useCallback(async (parentUid: string | null = null) => {
     setLoading(true)
     setError(null)
 
@@ -68,15 +69,13 @@ export default function DynamicContent() {
         make: make || '',
         model: model || '',
         year: year || '',
+        parent_uid: parentUid || 'null',
       })
-
-      if (menuPath) params.append('menu_path', menuPath)
-      if (topMenu) params.append('top_menu', topMenu)
 
       const data = await apiFetch(`api/dynamic-menu?${params.toString()}`)
       
-      if (menuPath) {
-        updateMenuData(data, menuPath)
+      if (parentUid) {
+        updateMenuData(data, parentUid)
       } else {
         setMenuData(data)
       }
@@ -92,11 +91,11 @@ export default function DynamicContent() {
     fetchMenuData()
   }, [fetchMenuData])
 
-  const updateMenuData = (newData: MenuItem[], menuPath: string) => {
+  const updateMenuData = (newData: MenuItem[], parentUid: string) => {
     setMenuData(prevData => {
       const updateRecursive = (items: MenuItem[]): MenuItem[] => {
         return items.map(item => {
-          if (item.name === menuPath) {
+          if (item.uid === parentUid) {
             return { ...item, submenus: newData }
           } else if (item.submenus) {
             return { ...item, submenus: updateRecursive(item.submenus) }
@@ -108,52 +107,46 @@ export default function DynamicContent() {
     })
   }
 
-  const scrollToMenuItem = (itemName: string) => {
-    const element = document.getElementById(itemName);
+  const scrollToMenuItem = (itemUid: string) => {
+    const element = document.getElementById(itemUid);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
-  const handleMenuClick = (menuItem: MenuItem, path: string) => {
+  const handleMenuClick = (menuItem: MenuItem) => {
     setExpandedMenus(prevExpandedMenus => {
-      if (prevExpandedMenus.includes(path)) {
+      if (prevExpandedMenus.includes(menuItem.uid)) {
         // Collapse this menu and all its submenus
-        const newExpandedMenus = prevExpandedMenus.filter(expandedPath => !expandedPath.startsWith(path));
+        const newExpandedMenus = prevExpandedMenus.filter(expandedUid => expandedUid !== menuItem.uid);
         setLastOpenedMenu(newExpandedMenus[newExpandedMenus.length - 1] || null);
         return newExpandedMenus;
       } else {
         // Expand this menu
-        setLastOpenedMenu(path);
-        return [...prevExpandedMenus, path];
+        setLastOpenedMenu(menuItem.uid);
+        return [...prevExpandedMenus, menuItem.uid];
       }
     });
 
     if (menuItem.content) {
       setActiveContent(menuItem);
     } else if (!menuItem.submenus) {
-      fetchMenuData(menuItem.name, menuItem.top_menu);
+      fetchMenuData(menuItem.uid);
     }
     
-    scrollToMenuItem(menuItem.name);
+    scrollToMenuItem(menuItem.uid);
   };
 
-  const renderMenuItem = (item: MenuItem, path: string = '', level: number = 0) => {
-    const isExpanded = expandedMenus.includes(path);
+  const renderMenuItem = (item: MenuItem, level: number = 0) => {
+    const isExpanded = expandedMenus.includes(item.uid);
     const hasSubmenus = item.submenus && item.submenus.length > 0;
     const isActive = activeContent === item;
-    const isChunkText = item.name === 'chunk_text';
-    const displayName = isChunkText ? item.parent_name || '' : item.name;
-    const isLastOpened = path === lastOpenedMenu;
-
-    if (isChunkText) {
-      return item.content ? renderContent(item.content, displayName) : null;
-    }
+    const isLastOpened = item.uid === lastOpenedMenu;
 
     return (
       <motion.div
-        key={path}
-        id={item.name}
+        key={item.uid}
+        id={item.uid}
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: -20 }}
@@ -163,7 +156,7 @@ export default function DynamicContent() {
         <Button
           variant="ghost"
           className={`w-full justify-start pl-${level * 4} ${isExpanded ? 'font-bold' : ''} hover:bg-accent/50 transition-colors duration-200`}
-          onClick={() => handleMenuClick(item, path)}
+          onClick={() => handleMenuClick(item)}
         >
           <div className="mr-2">
             {isExpanded ? (
@@ -172,7 +165,7 @@ export default function DynamicContent() {
               <Folder className="h-4 w-4" />
             )}
           </div>
-          {displayName}
+          {item.name}
         </Button>
         <AnimatePresence>
           {isExpanded && (
@@ -187,9 +180,9 @@ export default function DynamicContent() {
                 {isExpanded && (
                   <>
                     {hasSubmenus && item.submenus!.map(subItem => 
-                      renderMenuItem(subItem, `${path}/${subItem.name}`, level + 1)
+                      renderMenuItem(subItem, level + 1)
                     )}
-                    {!hasSubmenus && item.content && renderContent(item.content, displayName)}
+                    {!hasSubmenus && item.content && renderContent(item.content, item.name)}
                   </>
                 )}
               </motion.div>
@@ -256,7 +249,7 @@ export default function DynamicContent() {
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">Dynamic Content</h1>
       <div className="space-y-4">
-        {menuData.map(item => renderMenuItem(item, item.name))}
+        {menuData.map(item => renderMenuItem(item))}
       </div>
     </div>
   )
