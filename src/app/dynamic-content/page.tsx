@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Folder, FolderOpen, Loader2, ChevronRight } from 'lucide-react'
+import { Folder, FolderOpen, ChevronRight, Loader2 } from 'lucide-react'
 import { apiFetch } from '@api/api'
 import { Button } from "@/components/ui/Button"
 import { Card, CardContent } from "@/components/ui/Card"
@@ -11,10 +11,10 @@ import Image from 'next/image'
 import { CurlyBrace } from '@/components/CurlyBrace'
 
 interface MenuItem {
+  uid: string;
+  parent_uid: string | null;
   name: string;
-  parent_name?: string;
-  top_menu?: string;
-  submenus?: MenuItem[];
+  type: 'menu' | 'chunk_text';
   content?: {
     text?: string;
     image?: string;
@@ -32,9 +32,9 @@ export default function DynamicContent() {
   const [error, setError] = useState<string | null>(null)
   const [expandedMenus, setExpandedMenus] = useState<string[]>([])
   const [activeContent, setActiveContent] = useState<MenuItem | null>(null)
-  const [lastOpenedMenu, setLastOpenedMenu] = useState<string | null>(null);
+  const [menuPath, setMenuPath] = useState<MenuItem[]>([])
 
-  const fetchMenuData = useCallback(async (parentName: string | null = null, topMenu: string | null = null) => {
+  const fetchMenuData = useCallback(async (parentUid: string | null = null) => {
     setLoading(true)
     setError(null)
 
@@ -43,9 +43,8 @@ export default function DynamicContent() {
         make: make || '',
         model: model || '',
         year: year || '',
+        parent_uid: parentUid || 'null',
       })
-      if (parentName !== null) params.append('parent_name', parentName)
-      if (topMenu !== null) params.append('top_menu', topMenu)
 
       const data = await apiFetch(`api/dynamic-menu?${params.toString()}`)
       return data as MenuItem[]
@@ -60,63 +59,50 @@ export default function DynamicContent() {
 
   useEffect(() => {
     const loadInitialData = async () => {
-      const initialData = await fetchMenuData(null, null)
-      console.log('Initial data:', initialData)
+      const initialData = await fetchMenuData(null)
       setMenuData(initialData)
     }
     loadInitialData()
   }, [fetchMenuData])
 
-  const handleMenuClick = async (menuItem: MenuItem, path: string) => {
-    setExpandedMenus(prevExpandedMenus => {
-      if (prevExpandedMenus.includes(path)) {
-        // Collapse this menu and all its submenus
-        const newExpandedMenus = prevExpandedMenus.filter(expandedPath => !expandedPath.startsWith(path));
-        setLastOpenedMenu(newExpandedMenus[newExpandedMenus.length - 1] || null);
-        return newExpandedMenus;
+  const handleMenuClick = async (menuItem: MenuItem) => {
+    if (menuItem.type === 'chunk_text') {
+      setActiveContent(menuItem)
+      return
+    }
+
+    setExpandedMenus(prev => {
+      const isExpanded = prev.includes(menuItem.uid)
+      if (isExpanded) {
+        return prev.filter(id => id !== menuItem.uid)
       } else {
-        // Expand this menu
-        setLastOpenedMenu(path);
-        return [...prevExpandedMenus, path];
+        return [...prev, menuItem.uid]
       }
-    });
+    })
 
-    if (menuItem.name === 'chunk_text') {
-      setActiveContent(menuItem);
-    } else if (!menuItem.submenus) {
-      const newSubmenus = await fetchMenuData(menuItem.name, menuItem.top_menu);
-      setMenuData(prevData => {
-        const updateRecursive = (items: MenuItem[]): MenuItem[] => {
-          return items.map(item => {
-            if (item.name === menuItem.name) {
-              return { ...item, submenus: newSubmenus };
-            } else if (item.submenus) {
-              return { ...item, submenus: updateRecursive(item.submenus) };
-            }
-            return item;
-          });
-        };
-        return updateRecursive(prevData);
-      });
+    setMenuPath(prev => {
+      const index = prev.findIndex(item => item.uid === menuItem.uid)
+      if (index !== -1) {
+        return prev.slice(0, index + 1)
+      } else {
+        return [...prev, menuItem]
+      }
+    })
+
+    if (!menuData.some(item => item.parent_uid === menuItem.uid)) {
+      const children = await fetchMenuData(menuItem.uid)
+      setMenuData(prev => [...prev, ...children])
     }
-  };
+  }
 
-  const renderMenuItem = (item: MenuItem, path: string = '', level: number = 0) => {
-    const isExpanded = expandedMenus.includes(path);
-    const hasSubmenus = item.submenus && item.submenus.length > 0;
-    const isActive = activeContent === item;
-    const isChunkText = item.name === 'chunk_text';
-    const displayName = isChunkText ? item.parent_name || '' : item.name;
-    const isLastOpened = path === lastOpenedMenu;
-
-    if (isChunkText) {
-      return item.content ? renderContent(item.content, displayName) : null;
-    }
+  const renderMenuItem = (item: MenuItem, level: number = 0) => {
+    const isExpanded = expandedMenus.includes(item.uid)
+    const hasChildren = menuData.some(child => child.parent_uid === item.uid)
+    const isActive = activeContent?.uid === item.uid
 
     return (
       <motion.div
-        key={path}
-        id={item.name}
+        key={item.uid}
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: -20 }}
@@ -126,7 +112,7 @@ export default function DynamicContent() {
         <Button
           variant="ghost"
           className={`w-full justify-start pl-${level * 4} ${isExpanded ? 'font-bold' : ''} hover:bg-accent/50 transition-colors duration-200`}
-          onClick={() => handleMenuClick(item, path)}
+          onClick={() => handleMenuClick(item)}
         >
           <div className="mr-2">
             {isExpanded ? (
@@ -135,22 +121,22 @@ export default function DynamicContent() {
               <Folder className="h-4 w-4" />
             )}
           </div>
-          {displayName}
+          {item.name}
+          {hasChildren && <ChevronRight className={`ml-auto h-4 w-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />}
         </Button>
         <AnimatePresence>
           {isExpanded && (
-            <CurlyBrace isVisible={isLastOpened}>
+            <CurlyBrace isVisible={isExpanded}>
               <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.3 }}
                 className="ml-4"
               >
-                {hasSubmenus && item.submenus!.map(subItem => 
-                  renderMenuItem(subItem, `${path}/${subItem.name}`, level + 1)
-                )}
-                {!hasSubmenus && item.content && renderContent(item.content, displayName)}
+                {menuData
+                  .filter(child => child.parent_uid === item.uid)
+                  .map(child => renderMenuItem(child, level + 1))}
               </motion.div>
             </CurlyBrace>
           )}
@@ -159,19 +145,21 @@ export default function DynamicContent() {
     )
   }
 
-  const renderContent = (content: { text?: string; image?: string }[], parentName: string) => {
+  const renderContent = (item: MenuItem) => {
+    if (!item.content) return null
+
     return (
       <Card className="mt-2 mb-4">
         <CardContent className="p-4">
-          <h3 className="text-lg font-semibold mb-2">{parentName}</h3>
-          {content.map((item, index) => (
+          <h3 className="text-lg font-semibold mb-2">{item.name}</h3>
+          {item.content.map((content, index) => (
             <div key={index} className="mb-4">
-              {item.text && <p className="mb-2">{item.text}</p>}
-              {item.image && (
+              {content.text && <p className="mb-2">{content.text}</p>}
+              {content.image && (
                 <div className="relative h-64 w-full mb-2">
                   <Image
-                    src={item.image}
-                    alt={`Content image ${index + 1}`}
+                    src={content.image}
+                    alt={`Content image for ${item.name}`}
                     layout="fill"
                     objectFit="contain"
                   />
@@ -181,8 +169,8 @@ export default function DynamicContent() {
           ))}
         </CardContent>
       </Card>
-    );
-  };
+    )
+  }
 
   if (loading && menuData.length === 0) {
     return (
@@ -205,28 +193,26 @@ export default function DynamicContent() {
       <h1 className="text-2xl font-bold mb-6">Dynamic Content</h1>
       <nav aria-label="Breadcrumb" className="mb-4">
         <ol className="flex items-center space-x-2">
-          {expandedMenus.map((path, index) => (
-            <li key={path} className="flex items-center">
+          {menuPath.map((item, index) => (
+            <li key={item.uid} className="flex items-center">
               {index > 0 && <ChevronRight className="h-4 w-4 mx-2" />}
               <Button
                 variant="link"
-                onClick={() => {
-                  const newExpandedMenus = expandedMenus.slice(0, index + 1);
-                  setExpandedMenus(newExpandedMenus);
-                  setLastOpenedMenu(newExpandedMenus[newExpandedMenus.length - 1] || null);
-                }}
+                onClick={() => handleMenuClick(item)}
                 className="text-sm"
               >
-                {path.split('/').pop()}
+                {item.name}
               </Button>
             </li>
           ))}
         </ol>
       </nav>
       <div className="space-y-4">
-        {menuData.map(item => renderMenuItem(item, item.name))}
+        {menuData
+          .filter(item => item.parent_uid === null)
+          .map(item => renderMenuItem(item))}
       </div>
-      {activeContent && renderContent(activeContent.content!, activeContent.name)}
+      {activeContent && renderContent(activeContent)}
     </div>
   )
 }
