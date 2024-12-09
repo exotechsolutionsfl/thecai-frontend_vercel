@@ -30,16 +30,21 @@ export default function DynamicContent() {
   const [menuData, setMenuData] = useState<MenuItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [expandedMenus, setExpandedMenus] = useState<string[]>([])
+  const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({})
   const [activeContent, setActiveContent] = useState<MenuItem | null>(null)
   const [lastOpenedMenu, setLastOpenedMenu] = useState<string | null>(null)
   const contentRef = useRef<HTMLDivElement>(null)
 
   const handleBackClick = useCallback(() => {
     setExpandedMenus(prevExpandedMenus => {
-      if (prevExpandedMenus.length > 0) {
-        const newExpandedMenus = prevExpandedMenus.slice(0, -1);
-        setLastOpenedMenu(newExpandedMenus[newExpandedMenus.length - 1] || null);
+      if (Object.keys(prevExpandedMenus).length > 0) {
+        const newExpandedMenus = {...prevExpandedMenus};
+        const lastExpanded = Object.keys(prevExpandedMenus).pop();
+        if (lastExpanded) {
+          newExpandedMenus[lastExpanded] = false;
+        }
+        const lastKey = Object.keys(newExpandedMenus).pop();
+        setLastOpenedMenu(lastKey || null);
         setActiveContent(null);
         return newExpandedMenus;
       }
@@ -115,18 +120,28 @@ export default function DynamicContent() {
     }
   };
 
-  const handleMenuClick = (menuItem: MenuItem) => {
+  const resetChildMenus = useCallback((menuItem: MenuItem, newExpandedMenus: Record<string, boolean>) => {
+    if (menuItem.submenus) {
+      menuItem.submenus.forEach(submenu => {
+        newExpandedMenus[submenu.uid] = false;
+        resetChildMenus(submenu, newExpandedMenus);
+      });
+    }
+  }, []);
+
+  const handleMenuClick = useCallback((menuItem: MenuItem) => {
     setExpandedMenus(prevExpandedMenus => {
-      if (prevExpandedMenus.includes(menuItem.uid)) {
-        // Collapse this menu and all its submenus
-        const newExpandedMenus = prevExpandedMenus.filter(expandedUid => expandedUid !== menuItem.uid);
-        setLastOpenedMenu(newExpandedMenus[newExpandedMenus.length - 1] || null);
-        return newExpandedMenus;
-      } else {
-        // Expand this menu
-        setLastOpenedMenu(menuItem.uid);
-        return [...prevExpandedMenus, menuItem.uid];
+      const newExpandedMenus = { ...prevExpandedMenus };
+      const isCurrentlyExpanded = newExpandedMenus[menuItem.uid];
+      
+      newExpandedMenus[menuItem.uid] = !isCurrentlyExpanded;
+      
+      if (!newExpandedMenus[menuItem.uid]) {
+        resetChildMenus(menuItem, newExpandedMenus);
       }
+      
+      setLastOpenedMenu(newExpandedMenus[menuItem.uid] ? menuItem.uid : null);
+      return newExpandedMenus;
     });
 
     if (menuItem.content) {
@@ -136,10 +151,10 @@ export default function DynamicContent() {
     }
     
     scrollToMenuItem(menuItem.uid);
-  };
+  }, [fetchMenuData, resetChildMenus]);
 
-  const renderMenuItem = (item: MenuItem, level: number = 0) => {
-    const isExpanded = expandedMenus.includes(item.uid);
+  const renderMenuItem = useCallback((item: MenuItem, level: number = 0) => {
+    const isExpanded = expandedMenus[item.uid] || false;
     const hasSubmenus = item.submenus && item.submenus.length > 0;
     const isActive = activeContent === item;
     const isChunkText = item.name === 'chunk_text';
@@ -198,7 +213,7 @@ export default function DynamicContent() {
         </AnimatePresence>
       </motion.div>
     )
-  }
+  }, [expandedMenus, activeContent, lastOpenedMenu, handleMenuClick]);
 
   const renderContent = (content: { [key: string]: string }[], parentName: string) => {
     return (
