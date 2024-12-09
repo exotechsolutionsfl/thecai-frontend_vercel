@@ -13,13 +13,20 @@ import { CurlyBrace } from '@/components/CurlyBrace'
 interface MenuItem {
   uid: string;
   name: string;
-  parent_name?: string;
+  parent_uid: string | null;
   top_menu?: string;
   submenus?: MenuItem[];
   content?: {
     [key: string]: string;
   }[];
 }
+
+interface CacheItem {
+  data: MenuItem[];
+  timestamp: number;
+}
+
+const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
 
 export default function DynamicContent() {
   const searchParams = useSearchParams()
@@ -34,6 +41,7 @@ export default function DynamicContent() {
   const [activeContent, setActiveContent] = useState<MenuItem | null>(null)
   const [lastOpenedMenu, setLastOpenedMenu] = useState<string | null>(null)
   const contentRef = useRef<HTMLDivElement>(null)
+  const [cache, setCache] = useState<Record<string, CacheItem>>({})
 
   const handleBackClick = useCallback(() => {
     setExpandedMenus(prevExpandedMenus => {
@@ -64,17 +72,30 @@ export default function DynamicContent() {
     setLoading(true)
     setError(null)
 
+    const cacheKey = `${make}-${model}-${year}-${parentUid || 'root'}`;
+    const cachedData = cache[cacheKey];
+
+    if (cachedData && Date.now() - cachedData.timestamp < CACHE_EXPIRY) {
+      setMenuData(cachedData.data);
+      setLoading(false);
+      return;
+    }
+
     try {
       const params = new URLSearchParams({
         make: make || '',
         model: model || '',
         year: year || '',
+        parent_uid: parentUid || 'null',
       })
-
-      if (parentUid) params.append('parent_uid', parentUid)
 
       const data = await apiFetch(`api/dynamic-menu?${params.toString()}`)
       
+      setCache(prevCache => ({
+        ...prevCache,
+        [cacheKey]: { data, timestamp: Date.now() }
+      }));
+
       if (parentUid) {
         updateMenuData(data, parentUid)
       } else {
@@ -86,7 +107,7 @@ export default function DynamicContent() {
     } finally {
       setLoading(false)
     }
-  }, [make, model, year])
+  }, [make, model, year, cache])
 
   useEffect(() => {
     fetchMenuData()
@@ -115,6 +136,31 @@ export default function DynamicContent() {
     }
   };
 
+  const prefetchNextLevel = async (menuItem: MenuItem) => {
+    if (menuItem.submenus && menuItem.submenus.length > 0) {
+      for (const submenu of menuItem.submenus) {
+        const cacheKey = `${make}-${model}-${year}-${submenu.uid}`;
+        if (!cache[cacheKey]) {
+          try {
+            const params = new URLSearchParams({
+              make: make || '',
+              model: model || '',
+              year: year || '',
+              parent_uid: submenu.uid,
+            })
+            const data = await apiFetch(`api/dynamic-menu?${params.toString()}`)
+            setCache(prevCache => ({
+              ...prevCache,
+              [cacheKey]: { data, timestamp: Date.now() }
+            }));
+          } catch (error) {
+            console.error('Error prefetching data:', error)
+          }
+        }
+      }
+    }
+  };
+
   const handleMenuClick = (menuItem: MenuItem) => {
     setExpandedMenus(prevExpandedMenus => {
       if (prevExpandedMenus.includes(menuItem.uid)) {
@@ -136,19 +182,16 @@ export default function DynamicContent() {
     }
     
     scrollToMenuItem(menuItem.uid);
+
+    // Trigger prefetching
+    prefetchNextLevel(menuItem);
   };
 
   const renderMenuItem = (item: MenuItem, level: number = 0) => {
     const isExpanded = expandedMenus.includes(item.uid);
     const hasSubmenus = item.submenus && item.submenus.length > 0;
     const isActive = activeContent === item;
-    const isChunkText = item.name === 'chunk_text';
-    const displayName = isChunkText ? item.parent_name || '' : item.name;
     const isLastOpened = item.uid === lastOpenedMenu;
-
-    if (isChunkText) {
-      return item.content ? renderContent(item.content, displayName) : null;
-    }
 
     return (
       <motion.div
@@ -172,7 +215,7 @@ export default function DynamicContent() {
               <Folder className="h-4 w-4" />
             )}
           </div>
-          {displayName}
+          {item.name}
         </Button>
         <AnimatePresence>
           {isExpanded && (
@@ -189,7 +232,7 @@ export default function DynamicContent() {
                     {hasSubmenus && item.submenus!.map(subItem => 
                       renderMenuItem(subItem, level + 1)
                     )}
-                    {!hasSubmenus && item.content && renderContent(item.content, displayName)}
+                    {!hasSubmenus && item.content && renderContent(item.content, item.name)}
                   </>
                 )}
               </motion.div>
