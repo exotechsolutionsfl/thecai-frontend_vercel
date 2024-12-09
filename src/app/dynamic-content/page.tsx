@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Folder, FolderOpen, ChevronRight, Loader2 } from 'lucide-react'
+import { Folder, FolderOpen, Loader2 } from 'lucide-react'
 import { apiFetch } from '@api/api'
 import { Button } from "@/components/ui/Button"
 import { Card, CardContent } from "@/components/ui/Card"
@@ -206,26 +206,6 @@ export default function DynamicContent() {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">Dynamic Content</h1>
-      <nav aria-label="Breadcrumb" className="mb-4">
-        <ol className="flex items-center space-x-2">
-          {expandedMenus.map((path, index) => (
-            <li key={path} className="flex items-center">
-              {index > 0 && <ChevronRight className="h-4 w-4 mx-2" />}
-              <Button
-                variant="link"
-                onClick={() => {
-                  const newExpandedMenus = expandedMenus.slice(0, index + 1);
-                  setExpandedMenus(newExpandedMenus);
-                  setLastOpenedMenu(newExpandedMenus[newExpandedMenus.length - 1] || null);
-                }}
-                className="text-sm"
-              >
-                {path.split('/').pop()}
-              </Button>
-            </li>
-          ))}
-        </ol>
-      </nav>
       <div className="space-y-4">
         {menuData
           .filter(item => item.parent_name === null)
