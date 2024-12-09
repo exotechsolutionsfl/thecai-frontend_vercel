@@ -6,8 +6,7 @@ export async function GET(request: Request) {
   const make = searchParams.get('make')
   const model = searchParams.get('model')
   const year = searchParams.get('year')
-  const menuPath = searchParams.get('menu_path')
-  const topMenu = searchParams.get('top_menu')
+  const parentUid = searchParams.get('parent_uid')
 
   if (!make || !model || !year) {
     return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
@@ -15,8 +14,7 @@ export async function GET(request: Request) {
 
   try {
     const params = new URLSearchParams({ make, model, year })
-    if (menuPath) params.append('menu_path', menuPath)
-    if (topMenu) params.append('top_menu', topMenu)
+    if (parentUid !== null) params.append('parent_uid', parentUid)
 
     const data = await apiFetch(`dynamic-menu?${params.toString()}`)
     return NextResponse.json(data)
@@ -25,4 +23,3 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Failed to fetch menu data' }, { status: 500 })
   }
 }
-
