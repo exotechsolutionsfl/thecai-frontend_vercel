@@ -164,10 +164,6 @@ export default function DynamicContent() {
     const displayName = isChunkText ? item.parent_name || '' : item.name;
     const isLastOpened = item.uid === lastOpenedMenu;
 
-    if (isChunkText) {
-      return item.content ? renderContent(item.content, displayName) : null;
-    }
-
     return (
       <motion.div
         key={item.uid}
@@ -193,7 +189,7 @@ export default function DynamicContent() {
           {displayName}
         </Button>
         <AnimatePresence>
-          {isExpanded && (
+          {isExpanded && hasSubmenus && (
             <CurlyBrace isVisible={isLastOpened}>
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
@@ -202,14 +198,7 @@ export default function DynamicContent() {
                 transition={{ duration: 0.3 }}
                 className="ml-4"
               >
-                {isExpanded && (
-                  <>
-                    {hasSubmenus && item.submenus!.map(subItem => 
-                      renderMenuItem(subItem, level + 1)
-                    )}
-                    {!hasSubmenus && item.content && renderContent(item.content, displayName)}
-                  </>
-                )}
+                {item.submenus!.map(subItem => renderMenuItem(subItem, level + 1))}
               </motion.div>
             </CurlyBrace>
           )}
@@ -218,10 +207,9 @@ export default function DynamicContent() {
     )
   }, [expandedMenus, activeContent, lastOpenedMenu, handleMenuClick]);
 
-  const renderContent = (content: { [key: string]: string }[], parentName: string) => {
+  const renderContent = (content: { [key: string]: string }[]) => {
     return (
       <div className="space-y-4">
-        <h3 className="text-xl font-semibold sticky top-0 bg-background py-2">{parentName}</h3>
         {content.map((item, index) => (
           <div key={index} className="space-y-2">
             {Object.entries(item).map(([key, value]) => {
@@ -274,7 +262,7 @@ export default function DynamicContent() {
 
   return (
     <div className="container mx-auto px-4 py-8 flex">
-      <div className="space-y-4 flex-grow">
+      <div className="w-full lg:w-1/3 space-y-4 pr-4">
         {menuData.map(item => renderMenuItem(item))}
       </div>
       <AnimatePresence>
@@ -284,16 +272,16 @@ export default function DynamicContent() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 300 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="fixed top-0 right-0 w-2/5 h-full bg-background border-l border-border shadow-lg"
+            className="fixed top-0 right-0 w-full lg:w-2/3 h-full bg-background border-l border-border shadow-lg overflow-hidden"
           >
-            <div className="p-4 flex justify-between items-center border-b">
+            <div className="p-4 flex justify-between items-center border-b sticky top-0 bg-background z-10">
               <h2 className="text-2xl font-bold">{sideWindowContent.name}</h2>
               <Button variant="ghost" size="icon" onClick={closeSideWindow}>
                 <X className="h-6 w-6" />
               </Button>
             </div>
             <ScrollArea className="h-[calc(100vh-70px)] p-4">
-              {sideWindowContent.content && renderContent(sideWindowContent.content, sideWindowContent.name)}
+              {sideWindowContent.content && renderContent(sideWindowContent.content)}
             </ScrollArea>
           </motion.div>
         )}
