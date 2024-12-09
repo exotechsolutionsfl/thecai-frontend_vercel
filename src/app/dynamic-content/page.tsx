@@ -177,7 +177,7 @@ export default function DynamicContent() {
       >
         <Button
           variant="ghost"
-          className={`w-full justify-start pl-${level * 4} ${isExpanded ? 'font-bold' : ''} hover:bg-accent/50 transition-colors duration-200`}
+          className={`w-full text-left pl-${level * 2} pr-2 py-2 ${isExpanded ? 'font-bold' : ''} hover:bg-accent/50 transition-colors duration-200`}
           onClick={() => handleMenuClick(item)}
         >
           <div className="mr-2">
@@ -217,7 +217,7 @@ export default function DynamicContent() {
 
   const renderContent = (content: { [key: string]: string }[], parentName: string) => {
     return (
-      <Card className="mt-2 mb-4">
+      <Card className="mt-2 mb-4 ml-2">
         <CardContent className="p-4">
           <h3 className="text-lg font-semibold mb-2">{parentName}</h3>
           {content.map((item, index) => (
@@ -268,8 +268,8 @@ export default function DynamicContent() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="space-y-4">
+    <div className="container mx-auto px-2 sm:px-4 py-8 max-w-5xl">
+      <div className="space-y-2">
         {menuData.map(item => renderMenuItem(item))}
       </div>
     </div>
