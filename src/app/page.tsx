@@ -103,7 +103,7 @@ export default function HomePage() {
   const handleGetStarted = () => router.push('/vehicle-selection')
   const handleAITroubleshooter = () => router.push('/ai-troubleshooter')
   const handleSelectVehicle = (vehicle: Vehicle) => {
-    router.push(`/main-topics?make=${encodeURIComponent(vehicle.make)}&model=${encodeURIComponent(vehicle.model)}&year=${encodeURIComponent(vehicle.year)}`)
+    router.push(`/dynamic-content?make=${encodeURIComponent(vehicle.make)}&model=${encodeURIComponent(vehicle.model)}&year=${encodeURIComponent(vehicle.year)}`)
   }
 
   const quickActions: QuickAction[] = [
