@@ -177,19 +177,17 @@ export default function DynamicContent() {
       >
         <Button
           variant="ghost"
-          className={`w-full text-left pl-${level * 2} pr-2 py-2 ${isExpanded ? 'font-bold' : ''} hover:bg-accent/50 transition-colors duration-200`}
+          className={`w-full justify-start pl-${level * 4} ${isExpanded ? 'font-bold' : ''} hover:bg-accent/50 transition-colors duration-200`}
           onClick={() => handleMenuClick(item)}
         >
-          <div className="flex items-center">
-            <div className="mr-2">
-              {isExpanded ? (
-                <FolderOpen className="h-4 w-4" />
-              ) : (
-                <Folder className="h-4 w-4" />
-              )}
-            </div>
-            <span className="truncate">{displayName}</span>
+          <div className="mr-2">
+            {isExpanded ? (
+              <FolderOpen className="h-4 w-4" />
+            ) : (
+              <Folder className="h-4 w-4" />
+            )}
           </div>
+          {displayName}
         </Button>
         <AnimatePresence>
           {isExpanded && (
@@ -271,15 +269,8 @@ export default function DynamicContent() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex">
-        <div className="w-1/4 pr-4">
-          <div className="space-y-2">
-            {menuData.map(item => renderMenuItem(item))}
-          </div>
-        </div>
-        <div className="w-3/4">
-          {activeContent && renderContent(activeContent.content || [], activeContent.name)}
-        </div>
+      <div className="space-y-4">
+        {menuData.map(item => renderMenuItem(item))}
       </div>
     </div>
   )
