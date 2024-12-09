@@ -3,12 +3,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronRight, Folder, FolderOpen } from 'lucide-react'
+import { ChevronRight, Folder, FolderOpen, X } from 'lucide-react'
 import { apiFetch } from '@api/api'
 import { Button } from "@/components/ui/Button"
-import { Card, CardContent } from "@/components/ui/Card"
 import Image from 'next/image'
 import { CurlyBrace } from '@/components/CurlyBrace'
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 interface MenuItem {
   uid: string;
@@ -33,6 +33,8 @@ export default function DynamicContent() {
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({})
   const [activeContent, setActiveContent] = useState<MenuItem | null>(null)
   const [lastOpenedMenu, setLastOpenedMenu] = useState<string | null>(null)
+  const [sideWindowContent, setSideWindowContent] = useState<MenuItem | null>(null)
+  const [isSideWindowOpen, setIsSideWindowOpen] = useState(false)
   const contentRef = useRef<HTMLDivElement>(null)
 
   const handleBackClick = useCallback(() => {
@@ -145,7 +147,8 @@ export default function DynamicContent() {
     });
 
     if (menuItem.content) {
-      setActiveContent(menuItem);
+      setSideWindowContent(menuItem);
+      setIsSideWindowOpen(true);
     } else if (!menuItem.submenus) {
       fetchMenuData(menuItem.uid);
     }
@@ -217,33 +220,35 @@ export default function DynamicContent() {
 
   const renderContent = (content: { [key: string]: string }[], parentName: string) => {
     return (
-      <Card className="mt-2 mb-4">
-        <CardContent className="p-4">
-          <h3 className="text-lg font-semibold mb-2">{parentName}</h3>
-          {content.map((item, index) => (
-            <div key={index} className="mb-4">
-              {Object.entries(item).map(([key, value]) => {
-                if (key.startsWith('text')) {
-                  return <p key={key} className="mb-2">{value}</p>;
-                } else if (key.startsWith('image')) {
-                  return (
-                    <div key={key} className="relative h-64 w-full mb-2">
-                      <Image
-                        src={value}
-                        alt={`Content image ${index + 1}`}
-                        layout="fill"
-                        objectFit="contain"
-                      />
-                    </div>
-                  );
-                }
-                return null;
-              })}
-            </div>
-          ))}
-        </CardContent>
-      </Card>
+      <div className="space-y-4">
+        <h3 className="text-xl font-semibold sticky top-0 bg-background py-2">{parentName}</h3>
+        {content.map((item, index) => (
+          <div key={index} className="space-y-2">
+            {Object.entries(item).map(([key, value]) => {
+              if (key.startsWith('text')) {
+                return <p key={key} className="text-sm">{value}</p>;
+              } else if (key.startsWith('image')) {
+                return (
+                  <div key={key} className="relative h-64 w-full">
+                    <Image
+                      src={value}
+                      alt={`Content image ${index + 1}`}
+                      layout="fill"
+                      objectFit="contain"
+                    />
+                  </div>
+                );
+              }
+              return null;
+            })}
+          </div>
+        ))}
+      </div>
     );
+  };
+
+  const closeSideWindow = () => {
+    setIsSideWindowOpen(false);
   };
 
   if (loading && menuData.length === 0) {
@@ -268,10 +273,31 @@ export default function DynamicContent() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="space-y-4">
+    <div className="container mx-auto px-4 py-8 flex">
+      <div className="space-y-4 flex-grow">
         {menuData.map(item => renderMenuItem(item))}
       </div>
+      <AnimatePresence>
+        {isSideWindowOpen && sideWindowContent && (
+          <motion.div
+            initial={{ opacity: 0, x: 300 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 300 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            className="fixed top-0 right-0 w-2/5 h-full bg-background border-l border-border shadow-lg"
+          >
+            <div className="p-4 flex justify-between items-center border-b">
+              <h2 className="text-2xl font-bold">{sideWindowContent.name}</h2>
+              <Button variant="ghost" size="icon" onClick={closeSideWindow}>
+                <X className="h-6 w-6" />
+              </Button>
+            </div>
+            <ScrollArea className="h-[calc(100vh-70px)] p-4">
+              {sideWindowContent.content && renderContent(sideWindowContent.content, sideWindowContent.name)}
+            </ScrollArea>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
