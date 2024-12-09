@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Folder, FolderOpen, Loader2 } from 'lucide-react'
+import { Folder, FolderOpen, Loader2, ChevronRight } from 'lucide-react'
 import { apiFetch } from '@api/api'
 import { Button } from "@/components/ui/Button"
 import { Card, CardContent } from "@/components/ui/Card"
@@ -43,9 +43,9 @@ export default function DynamicContent() {
         make: make || '',
         model: model || '',
         year: year || '',
-        parent_name: parentName || '',
-        top_menu: topMenu || '',
       })
+      if (parentName !== null) params.append('parent_name', parentName)
+      if (topMenu !== null) params.append('top_menu', topMenu)
 
       const data = await apiFetch(`api/dynamic-menu?${params.toString()}`)
       return data as MenuItem[]
@@ -61,6 +61,7 @@ export default function DynamicContent() {
   useEffect(() => {
     const loadInitialData = async () => {
       const initialData = await fetchMenuData(null, null)
+      console.log('Initial data:', initialData)
       setMenuData(initialData)
     }
     loadInitialData()
@@ -202,10 +203,28 @@ export default function DynamicContent() {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">Dynamic Content</h1>
+      <nav aria-label="Breadcrumb" className="mb-4">
+        <ol className="flex items-center space-x-2">
+          {expandedMenus.map((path, index) => (
+            <li key={path} className="flex items-center">
+              {index > 0 && <ChevronRight className="h-4 w-4 mx-2" />}
+              <Button
+                variant="link"
+                onClick={() => {
+                  const newExpandedMenus = expandedMenus.slice(0, index + 1);
+                  setExpandedMenus(newExpandedMenus);
+                  setLastOpenedMenu(newExpandedMenus[newExpandedMenus.length - 1] || null);
+                }}
+                className="text-sm"
+              >
+                {path.split('/').pop()}
+              </Button>
+            </li>
+          ))}
+        </ol>
+      </nav>
       <div className="space-y-4">
-        {menuData
-          .filter(item => item.parent_name === null)
-          .map(item => renderMenuItem(item, item.name))}
+        {menuData.map(item => renderMenuItem(item, item.name))}
       </div>
       {activeContent && renderContent(activeContent.content!, activeContent.name)}
     </div>
