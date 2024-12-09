@@ -180,14 +180,16 @@ export default function DynamicContent() {
           className={`w-full text-left pl-${level * 2} pr-2 py-2 ${isExpanded ? 'font-bold' : ''} hover:bg-accent/50 transition-colors duration-200`}
           onClick={() => handleMenuClick(item)}
         >
-          <div className="mr-2">
-            {isExpanded ? (
-              <FolderOpen className="h-4 w-4" />
-            ) : (
-              <Folder className="h-4 w-4" />
-            )}
+          <div className="flex items-center">
+            <div className="mr-2">
+              {isExpanded ? (
+                <FolderOpen className="h-4 w-4" />
+              ) : (
+                <Folder className="h-4 w-4" />
+              )}
+            </div>
+            <span className="truncate">{displayName}</span>
           </div>
-          {displayName}
         </Button>
         <AnimatePresence>
           {isExpanded && (
@@ -217,7 +219,7 @@ export default function DynamicContent() {
 
   const renderContent = (content: { [key: string]: string }[], parentName: string) => {
     return (
-      <Card className="mt-2 mb-4 ml-2">
+      <Card className="mt-2 mb-4">
         <CardContent className="p-4">
           <h3 className="text-lg font-semibold mb-2">{parentName}</h3>
           {content.map((item, index) => (
@@ -268,9 +270,16 @@ export default function DynamicContent() {
   }
 
   return (
-    <div className="container mx-auto px-2 sm:px-4 py-8 max-w-5xl">
-      <div className="space-y-2">
-        {menuData.map(item => renderMenuItem(item))}
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex">
+        <div className="w-1/4 pr-4">
+          <div className="space-y-2">
+            {menuData.map(item => renderMenuItem(item))}
+          </div>
+        </div>
+        <div className="w-3/4">
+          {activeContent && renderContent(activeContent.content || [], activeContent.name)}
+        </div>
       </div>
     </div>
   )
