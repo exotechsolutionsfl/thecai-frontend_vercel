@@ -3,9 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 interface CurlyBraceProps {
   isVisible: boolean
   children: React.ReactNode
+  count?: number
 }
 
-export const CurlyBrace: React.FC<CurlyBraceProps> = ({ isVisible, children }) => {
+export const CurlyBrace: React.FC<CurlyBraceProps> = ({ isVisible, children, count }) => {
   return (
     <div className="relative pl-4 ml-2">
       <AnimatePresence>
@@ -37,6 +38,11 @@ export const CurlyBrace: React.FC<CurlyBraceProps> = ({ isVisible, children }) =
               exit={{ width: 0 }}
               transition={{ duration: 0.3, ease: 'easeInOut' }}
             />
+            {count !== undefined && (
+              <div className="absolute left-[-20px] top-[10px] bg-primary text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                {count}
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
