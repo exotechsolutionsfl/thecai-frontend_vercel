@@ -2,12 +2,11 @@
 
 import React, { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { motion } from 'framer-motion'
-import { ChevronRight } from 'lucide-react'
 import { apiFetch } from '@api/api'
 import { Card, CardContent } from "@/components/ui/Card"
 import Image from 'next/image'
 import { TreeBranch } from '@/components/TreeBranch'
+import Loading from '@/components/ui/loading'
 
 interface MenuItem {
   uid: string;
@@ -181,12 +180,7 @@ export default function DynamicContent() {
   if (loading && menuData.length === 0) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-        >
-          <ChevronRight className="h-8 w-8 text-primary" />
-        </motion.div>
+        <Loading message="Loading menu data..." />
       </div>
     )
   }
@@ -211,4 +205,3 @@ export default function DynamicContent() {
     </div>
   )
 }
-
