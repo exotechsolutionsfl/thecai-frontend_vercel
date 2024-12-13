@@ -1,15 +1,13 @@
 'use client'
 
-import React from 'react'
-import { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronRight, Folder, FolderOpen } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { ChevronRight } from 'lucide-react'
 import { apiFetch } from '@api/api'
-import { Button } from "@/components/ui/Button"
 import { Card, CardContent } from "@/components/ui/Card"
 import Image from 'next/image'
-import { CurlyBrace } from '@/components/CurlyBrace'
+import { TreeBranch } from '@/components/TreeBranch'
 
 interface MenuItem {
   uid: string;
@@ -32,39 +30,6 @@ export default function DynamicContent() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({})
-  const [activeContent, setActiveContent] = useState<MenuItem | null>(null)
-  const [lastOpenedMenu, setLastOpenedMenu] = useState<string | null>(null)
-  const contentRef = useRef<HTMLDivElement>(null)
-
-  const handleBackClick = useCallback(() => {
-    setExpandedMenus(prevExpandedMenus => {
-      if (Object.keys(prevExpandedMenus).length > 0) {
-        const newExpandedMenus = {...prevExpandedMenus};
-        const lastExpanded = Object.keys(prevExpandedMenus).pop();
-        if (lastExpanded) {
-          newExpandedMenus[lastExpanded] = false;
-        }
-        const lastKey = Object.keys(newExpandedMenus).pop();
-        setLastOpenedMenu(lastKey || null);
-        setActiveContent(null);
-        return newExpandedMenus;
-      }
-      return prevExpandedMenus;
-    });
-  }, []);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (contentRef.current && !contentRef.current.contains(event.target as Node)) {
-        handleBackClick();
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [handleBackClick]);
 
   const fetchMenuData = useCallback(async (parentUid: string | null = null) => {
     setLoading(true)
@@ -114,144 +79,104 @@ export default function DynamicContent() {
     })
   }
 
-  const scrollToMenuItem = (itemUid: string) => {
-    const element = document.getElementById(itemUid);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  };
-
-  const resetChildMenus = useCallback((menuItem: MenuItem, newExpandedMenus: Record<string, boolean>) => {
-    if (menuItem.submenus) {
-      menuItem.submenus.forEach(submenu => {
-        newExpandedMenus[submenu.uid] = false;
-        resetChildMenus(submenu, newExpandedMenus);
-      });
-    }
-  }, []);
-
   const handleMenuClick = useCallback((menuItem: MenuItem) => {
     setExpandedMenus(prevExpandedMenus => {
       const newExpandedMenus = { ...prevExpandedMenus };
-      const isCurrentlyExpanded = newExpandedMenus[menuItem.uid];
-      
-      newExpandedMenus[menuItem.uid] = !isCurrentlyExpanded;
-      
-      if (!newExpandedMenus[menuItem.uid]) {
-        resetChildMenus(menuItem, newExpandedMenus);
+      if (newExpandedMenus[menuItem.uid]) {
+        // If closing, reset all child menu states
+        const resetChildStates = (item: MenuItem) => {
+          if (item.submenus) {
+            item.submenus.forEach(subItem => {
+              newExpandedMenus[subItem.uid] = false;
+              resetChildStates(subItem);
+            });
+          }
+        };
+        resetChildStates(menuItem);
       }
-      
-      setLastOpenedMenu(newExpandedMenus[menuItem.uid] ? menuItem.uid : null);
+      newExpandedMenus[menuItem.uid] = !newExpandedMenus[menuItem.uid];
       return newExpandedMenus;
     });
 
-    if (menuItem.content) {
-      setActiveContent(menuItem);
-    } else if (!menuItem.submenus) {
+    if (!menuItem.submenus && !menuItem.content) {
       fetchMenuData(menuItem.uid);
     }
-    
-    scrollToMenuItem(menuItem.uid);
-  }, [fetchMenuData, resetChildMenus]);
+  }, [fetchMenuData]);
 
-  const renderMenuItem = useCallback((item: MenuItem, level: number = 0) => {
-    const isExpanded = expandedMenus[item.uid] || false;
-    const hasSubmenus = item.submenus && item.submenus.length > 0;
-    const isActive = activeContent === item;
-    const isChunkText = item.name === 'chunk_text';
-    const displayName = isChunkText ? item.parent_name || '' : item.name;
-    const isLastOpened = item.uid === lastOpenedMenu;
+  const renderMenuItem = useCallback((item: MenuItem, level: number = 0, isLastChild: boolean = false) => {
+    const isExpanded = expandedMenus[item.uid] || false
+    const hasSubmenus = item.submenus && item.submenus.length > 0
+    const isFolder = hasSubmenus || (!item.content && item.name !== 'chunk_text')
+    const displayName = item.name === 'chunk_text' ? item.parent_name || '' : item.name
 
-    if (isChunkText) {
-      return item.content ? renderContent(item.content, displayName, item.uid) : null;
+    if (item.name === 'chunk_text' && item.content) {
+      return renderContent(item.content, displayName, item.uid)
     }
 
     return (
-      <motion.div
+      <TreeBranch
         key={item.uid}
-        id={item.uid}
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: -20 }}
-        transition={{ duration: 0.3 }}
-        className={`mb-2 ${isActive ? 'z-10' : 'z-0'}`}
+        level={level}
+        isLastChild={isLastChild}
+        isFolder={isFolder}
+        isExpanded={isExpanded}
+        name={displayName}
+        onClick={() => handleMenuClick(item)}
+        hasChildren={hasSubmenus || (!!item.content && item.content.length > 0)}
       >
-        <Button
-          variant="ghost"
-          className={`w-full sm:w-11/12 lg:w-10/12 justify-start pl-${level * 2} ${isExpanded ? 'font-bold' : ''} hover:bg-accent/50 transition-colors duration-200`}
-          onClick={() => handleMenuClick(item)}
-        >
-          <div className="mr-2">
-            {isExpanded ? (
-              <FolderOpen className="h-4 w-4" />
-            ) : (
-              <Folder className="h-4 w-4" />
+        {isExpanded && hasSubmenus && (
+          <div className="ml-4 mt-2">
+            {item.submenus!.map((subItem, index) => 
+              renderMenuItem(
+                subItem,
+                level + 1,
+                index === item.submenus!.length - 1
+              )
             )}
           </div>
-          {displayName}
-        </Button>
-        <AnimatePresence>
-          {isExpanded && (
-            <motion.div
-              key={`${item.uid}-expanded`}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3 }}
-            >
-              <CurlyBrace isVisible={isLastOpened}>
-                <div className="ml-4">
-                  {hasSubmenus && item.submenus!.map(subItem => 
-                    renderMenuItem(subItem, level + 1)
-                  )}
-                  {!hasSubmenus && item.content && renderContent(item.content, displayName, item.uid)}
-                </div>
-              </CurlyBrace>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
+        )}
+        {isExpanded && item.content && renderContent(item.content, displayName, item.uid)}
+      </TreeBranch>
     )
-  }, [expandedMenus, activeContent, lastOpenedMenu, handleMenuClick]);
+  }, [expandedMenus, handleMenuClick])
 
-const renderContent = (content: { [key: string]: string }[], parentName: string, uid: string) => {
-  return (
-    <Card className="mt-2 mb-4 w-full sm:w-11/12 lg:w-10/12">
-      <CardContent className="p-4">
-        <h3 className="text-lg font-semibold mb-2">{parentName}</h3>
-        {content.map((item, contentIndex) => {
-          const contentItemKey = `${uid}-content-item-${contentIndex}`;
-          return (
-            <div key={contentItemKey} className="mb-4">
-              {Object.entries(item).map(([key, value]) => {
-                // Create a truly unique key using both the content index and the key name
-                const uniqueKey = `${uid}-${contentIndex}-${key}`;
-                
-                if (key.match(/^text_\d+_enhanced$/)) {
-                  return <p key={uniqueKey} className="mb-2">{value}</p>;
-                } else if (key.match(/^text_\d+$/) && !item[`${key}_enhanced`]) {
-                  return <p key={uniqueKey} className="mb-2">{value}</p>;
-                } else if (key.match(/^image_\d+_url$/)) {
-                  return (
-                    <div key={uniqueKey} className="relative h-64 w-full mb-2">
-                      <Image
-                        src={value}
-                        alt={`Content image ${contentIndex + 1}`}
-                        fill
-                        style={{ objectFit: 'contain' }}
-                      />
-                    </div>
-                  );
-                }
-                return null;
-              })}
-            </div>
-          );
-        })}
-      </CardContent>
-    </Card>
-  );
-};
+  const renderContent = (content: { [key: string]: string }[], parentName: string, uid: string) => {
+    return (
+      <Card className="mt-4 mb-4 ml-4">
+        <CardContent className="p-4">
+          <h3 className="text-lg font-semibold mb-2">{parentName}</h3>
+          {content.map((item, contentIndex) => {
+            const contentItemKey = `${uid}-content-item-${contentIndex}`
+            return (
+              <div key={contentItemKey} className="mb-4">
+                {Object.entries(item).map(([key, value]) => {
+                  const uniqueKey = `${uid}-${contentIndex}-${key}`
+                  
+                  if (key.match(/^text_\d+_enhanced$/)) {
+                    return <p key={uniqueKey} className="mb-2">{value}</p>
+                  } else if (key.match(/^text_\d+$/) && !item[`${key}_enhanced`]) {
+                    return <p key={uniqueKey} className="mb-2">{value}</p>
+                  } else if (key.match(/^image_\d+_url$/)) {
+                    return (
+                      <div key={uniqueKey} className="relative h-64 w-full mb-2">
+                        <Image
+                          src={value}
+                          alt={`Content image ${contentIndex + 1}`}
+                          fill
+                          style={{ objectFit: 'contain' }}
+                        />
+                      </div>
+                    )
+                  }
+                  return null
+                })}
+              </div>
+            )
+          })}
+        </CardContent>
+      </Card>
+    )
+  }
 
   if (loading && menuData.length === 0) {
     return (
@@ -276,15 +201,14 @@ const renderContent = (content: { [key: string]: string }[], parentName: string,
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="max-w-5xl mx-auto sm:ml-0 lg:ml-8">
-        <div className="space-y-4">
-          {menuData.map(item => (
-            <React.Fragment key={item.uid}>
-              {renderMenuItem(item)}
-            </React.Fragment>
+      <div className="max-w-5xl mx-auto py-8">
+        <div className="space-y-2">
+          {menuData.map((item, index) => (
+            renderMenuItem(item, 0, index === menuData.length - 1)
           ))}
         </div>
       </div>
     </div>
   )
 }
+
