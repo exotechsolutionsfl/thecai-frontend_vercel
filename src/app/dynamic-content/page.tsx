@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -162,7 +163,7 @@ export default function DynamicContent() {
     const isLastOpened = item.uid === lastOpenedMenu;
 
     if (isChunkText) {
-      return item.content ? renderContent(item.content, displayName) : null;
+      return item.content ? renderContent(item.content, displayName, item.uid) : null;
     }
 
     return (
@@ -177,7 +178,7 @@ export default function DynamicContent() {
       >
         <Button
           variant="ghost"
-          className={`w-full justify-start pl-${level * 4} ${isExpanded ? 'font-bold' : ''} hover:bg-accent/50 transition-colors duration-200`}
+          className={`w-full sm:w-11/12 lg:w-10/12 justify-start pl-${level * 2} ${isExpanded ? 'font-bold' : ''} hover:bg-accent/50 transition-colors duration-200`}
           onClick={() => handleMenuClick(item)}
         >
           <div className="mr-2">
@@ -191,48 +192,53 @@ export default function DynamicContent() {
         </Button>
         <AnimatePresence>
           {isExpanded && (
-            <CurlyBrace isVisible={isLastOpened}>
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-                className="ml-4"
-              >
-                {isExpanded && (
-                  <>
-                    {hasSubmenus && item.submenus!.map(subItem => 
-                      renderMenuItem(subItem, level + 1)
-                    )}
-                    {!hasSubmenus && item.content && renderContent(item.content, displayName)}
-                  </>
-                )}
-              </motion.div>
-            </CurlyBrace>
+            <motion.div
+              key={`${item.uid}-expanded`}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <CurlyBrace isVisible={isLastOpened}>
+                <div className="ml-4">
+                  {hasSubmenus && item.submenus!.map(subItem => 
+                    renderMenuItem(subItem, level + 1)
+                  )}
+                  {!hasSubmenus && item.content && renderContent(item.content, displayName, item.uid)}
+                </div>
+              </CurlyBrace>
+            </motion.div>
           )}
         </AnimatePresence>
       </motion.div>
     )
   }, [expandedMenus, activeContent, lastOpenedMenu, handleMenuClick]);
 
-  const renderContent = (content: { [key: string]: string }[], parentName: string) => {
-    return (
-      <Card className="mt-2 mb-4">
-        <CardContent className="p-4">
-          <h3 className="text-lg font-semibold mb-2">{parentName}</h3>
-          {content.map((item, index) => (
-            <div key={index} className="mb-4">
+const renderContent = (content: { [key: string]: string }[], parentName: string, uid: string) => {
+  return (
+    <Card className="mt-2 mb-4 w-full sm:w-11/12 lg:w-10/12">
+      <CardContent className="p-4">
+        <h3 className="text-lg font-semibold mb-2">{parentName}</h3>
+        {content.map((item, contentIndex) => {
+          const contentItemKey = `${uid}-content-item-${contentIndex}`;
+          return (
+            <div key={contentItemKey} className="mb-4">
               {Object.entries(item).map(([key, value]) => {
-                if (key.startsWith('text')) {
-                  return <p key={key} className="mb-2">{value}</p>;
-                } else if (key.startsWith('image')) {
+                // Create a truly unique key using both the content index and the key name
+                const uniqueKey = `${uid}-${contentIndex}-${key}`;
+                
+                if (key.match(/^text_\d+_enhanced$/)) {
+                  return <p key={uniqueKey} className="mb-2">{value}</p>;
+                } else if (key.match(/^text_\d+$/) && !item[`${key}_enhanced`]) {
+                  return <p key={uniqueKey} className="mb-2">{value}</p>;
+                } else if (key.match(/^image_\d+_url$/)) {
                   return (
-                    <div key={key} className="relative h-64 w-full mb-2">
+                    <div key={uniqueKey} className="relative h-64 w-full mb-2">
                       <Image
                         src={value}
-                        alt={`Content image ${index + 1}`}
-                        layout="fill"
-                        objectFit="contain"
+                        alt={`Content image ${contentIndex + 1}`}
+                        fill
+                        style={{ objectFit: 'contain' }}
                       />
                     </div>
                   );
@@ -240,11 +246,12 @@ export default function DynamicContent() {
                 return null;
               })}
             </div>
-          ))}
-        </CardContent>
-      </Card>
-    );
-  };
+          );
+        })}
+      </CardContent>
+    </Card>
+  );
+};
 
   if (loading && menuData.length === 0) {
     return (
@@ -268,9 +275,15 @@ export default function DynamicContent() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="space-y-4">
-        {menuData.map(item => renderMenuItem(item))}
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-5xl mx-auto sm:ml-0 lg:ml-8">
+        <div className="space-y-4">
+          {menuData.map(item => (
+            <React.Fragment key={item.uid}>
+              {renderMenuItem(item)}
+            </React.Fragment>
+          ))}
+        </div>
       </div>
     </div>
   )
