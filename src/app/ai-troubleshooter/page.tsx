@@ -30,46 +30,48 @@ export default function AITroubleshooter() {
   }, [state.selectedMake, state.selectedModel, state.selectedYear])
 
   return (
-    <div className="container mx-auto px-4 py-8 h-screen flex items-center justify-center overflow-hidden">
-      <AnimatePresence mode="wait">
-        {!state.showChat ? (
-          <motion.div
-            key="selection"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-            className="w-full max-w-md"
-          >
-            <Card>
-              <CardContent className="pt-6">
-                <h1 className="text-2xl font-bold mb-8 text-center">
-                  AI Troubleshooter
-                </h1>
-                <Suspense fallback={
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-3/4" />
-                  </div>
-                }>
-                  <VehicleSelection state={state} dispatch={dispatch} onConfirm={handleConfirm} />
-                </Suspense>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ) : (
-          <Suspense fallback={
-            <Card className="w-full max-w-2xl h-[600px]">
-              <CardContent className="h-full flex items-center justify-center">
-                <Skeleton className="h-[500px] w-full" />
-              </CardContent>
-            </Card>
-          }>
-            <ChatInterface state={state} dispatch={dispatch} />
-          </Suspense>
-        )}
-      </AnimatePresence>
+    <div className="fixed inset-0 flex items-center justify-center overflow-hidden bg-background pt-16 px-4">
+      <div className="w-full h-full max-w-2xl mx-auto flex flex-col justify-center">
+        <AnimatePresence mode="wait">
+          {!state.showChat ? (
+            <motion.div
+              key="selection"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              className="w-full max-w-md mx-auto"
+            >
+              <Card className="w-full max-w-md mx-auto max-h-[calc(100vh-8rem)] overflow-y-auto">
+                <CardContent className="pt-6">
+                  <h1 className="text-2xl font-bold mb-8 text-center">
+                    AI Troubleshooter
+                  </h1>
+                  <Suspense fallback={
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-3/4" />
+                    </div>
+                  }>
+                    <VehicleSelection state={state} dispatch={dispatch} onConfirm={handleConfirm} />
+                  </Suspense>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ) : (
+            <Suspense fallback={
+              <Card className="w-full h-full">
+                <CardContent className="h-full flex items-center justify-center">
+                  <Skeleton className="h-[500px] w-full" />
+                </CardContent>
+              </Card>
+            }>
+              <ChatInterface state={state} dispatch={dispatch} />
+            </Suspense>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   )
 }

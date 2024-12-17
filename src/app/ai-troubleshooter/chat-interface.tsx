@@ -312,82 +312,114 @@ export default function Component({ state, dispatch }: ChatInterfaceProps) {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3 }}
-      className="w-full h-full flex flex-col transition-all duration-500 ease-in-out pt-16"
+      className="w-full h-full flex flex-col transition-all duration-500 ease-in-out"
     >
-      <Button
-        variant="outline"
-        className="mb-4"
-        onClick={() => {
-          dispatch({ type: 'SET_SHOW_CHAT', payload: false });
-          dispatch({ type: 'CLEAR_CHAT_HISTORY' });
-        }}
-      >
-        ← Back to Selection
-      </Button>
-      <Card className="flex-grow overflow-hidden">
-        <CardContent className="h-full overflow-y-auto" onScroll={handleScroll}>
-          <AnimatePresence>
-            {groupMessages(state.chatHistory).map((group, groupIndex) => (
-              <motion.div
-                key={groupIndex}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3, delay: groupIndex * 0.1 }}
-                className={`mb-6 ${groupIndex === 0 ? 'mt-6' : ''}`}
-              >
-                {group.map((message, messageIndex) => (
+      <div className="w-full max-w-2xl mx-auto px-4 py-4">
+        <Button
+          variant="outline"
+          onClick={() => {
+            dispatch({ type: 'SET_SHOW_CHAT', payload: false });
+            dispatch({ type: 'CLEAR_CHAT_HISTORY' });
+          }}
+        >
+          ← Back to Selection
+        </Button>
+      </div>
+      <Card className="flex-grow overflow-hidden h-[calc(100vh-5rem)] w-full">
+        <CardContent className="h-full flex flex-col p-0">
+          <div className="flex-grow overflow-y-auto px-4 md:px-6 py-4" onScroll={handleScroll}>
+            <div className="max-w-2xl mx-auto">
+              <AnimatePresence>
+                {groupMessages(state.chatHistory).map((group, groupIndex) => (
                   <motion.div
-                    key={messageIndex}
-                    initial={{ opacity: 0, x: message.role === 'user' ? 20 : -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3, delay: messageIndex * 0.1 }}
-                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-2`}
+                    key={groupIndex}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3, delay: groupIndex * 0.1 }}
+                    className={`mb-6 ${groupIndex === 0 ? 'mt-6' : ''}`}
                   >
-                    <div className="flex flex-col">
-                      <div
-                        className={`max-w-[85%] rounded-2xl px-4 py-3 ${
-                          message.role === 'user'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted prose dark:prose-invert'
-                        }`}
+                    {group.map((message, messageIndex) => (
+                      <motion.div
+                        key={messageIndex}
+                        initial={{ opacity: 0, x: message.role === 'user' ? 20 : -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.3, delay: messageIndex * 0.1 }}
+                        className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-2`}
                       >
-                        <MemoizedMarkdown content={message.content} />
-                      </div>
-                      <div className={`text-xs mt-1 ${message.role === 'user' ? 'text-right' : 'text-left'} text-muted-foreground`}>
-                        {new Date().toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                      </div>
-                    </div>
+                        <div className="flex flex-col">
+                          <div
+                            className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+                              message.role === 'user'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-muted prose dark:prose-invert'
+                            }`}
+                          >
+                            <MemoizedMarkdown content={message.content} />
+                          </div>
+                          <div className={`text-xs mt-1 ${message.role === 'user' ? 'text-right' : 'text-left'} text-muted-foreground`}>
+                            {new Date().toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                    {group[0].role === 'assistant' && !group[0].feedbackSubmitted && (
+                      <FeedbackSection
+                        group={group[0]}
+                        toggleFeedback={toggleFeedback}
+                        handleStarClick={handleStarClick}
+                        submitFeedback={submitFeedback}
+                        state={state}
+                        dispatch={dispatch}
+                      />
+                    )}
+                    <AnimatePresence>
+                      {group[0].feedbackSubmitted && group[0].feedbackSuccess && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <Alert className="mt-2">
+                            <AlertDescription>Thank you for your feedback!</AlertDescription>
+                          </Alert>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </motion.div>
                 ))}
-                {group[0].role === 'assistant' && !group[0].feedbackSubmitted && (
-                  <FeedbackSection
-                    group={group[0]}
-                    toggleFeedback={toggleFeedback}
-                    handleStarClick={handleStarClick}
-                    submitFeedback={submitFeedback}
-                    state={state}
-                    dispatch={dispatch}
+              </AnimatePresence>
+              <div ref={chatEndRef} />
+            </div>
+          </div>
+          <div className="mt-auto border-t bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="max-w-2xl mx-auto px-4 py-2">
+              <div className="flex space-x-2">
+                <div className="flex-grow relative">
+                  <Input
+                    type="text"
+                    value={state.query}
+                    onChange={(e) => dispatch({ type: 'SET_QUERY', payload: e.target.value.slice(0, 280) })}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                    placeholder="Type your question here..."
+                    disabled={state.loading.search}
+                    className="pr-12"
                   />
-                )}
-                <AnimatePresence>
-                  {group[0].feedbackSubmitted && group[0].feedbackSuccess && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <Alert className="mt-2">
-                        <AlertDescription>Thank you for your feedback!</AlertDescription>
-                      </Alert>
-                    </motion.div>
+                  <span className="absolute right-3 bottom-2 text-sm text-muted-foreground">
+                    {state.query.length}/280
+                  </span>
+                </div>
+                <Button onClick={handleSearch} disabled={!state.query || state.loading.search}>
+                  {state.loading.search ? (
+                    <Settings className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
                   )}
-                </AnimatePresence>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-          <div ref={chatEndRef} />
+                </Button>
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
       <AnimatePresence>
@@ -409,30 +441,6 @@ export default function Component({ state, dispatch }: ChatInterfaceProps) {
           </motion.div>
         )}
       </AnimatePresence>
-      <div className="mt-4">
-        <div className="flex space-x-4">
-          <div className="flex-grow relative">
-            <Input
-              type="text"
-              value={state.query}
-              onChange={(e) => dispatch({ type: 'SET_QUERY', payload: e.target.value.slice(0, 280) })}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              placeholder="Type your question here..."
-              disabled={state.loading.search}
-            />
-            <span className="absolute right-3 bottom-3 text-sm text-muted-foreground">
-              {state.query.length}/280
-            </span>
-          </div>
-          <Button onClick={handleSearch} disabled={!state.query || state.loading.search}>
-            {state.loading.search ? (
-              <Settings className="w-4 h-4 animate-spin" />
-            ) : (
-              <Send className="w-4 h-4" />
-            )}
-          </Button>
-        </div>
-      </div>
     </motion.div>
   )
 }
