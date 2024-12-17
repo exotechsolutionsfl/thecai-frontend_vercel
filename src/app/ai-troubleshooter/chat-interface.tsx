@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react';
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Settings, Star, ChevronDown, ChevronUp, Send } from 'lucide-react'
@@ -10,6 +11,7 @@ import { Input } from "@/components/ui/Input"
 import { Textarea } from "@/components/ui/Textarea"
 import { State, Action } from './state'
 import { apiFetch } from '@api/api'
+import ReactMarkdown from 'react-markdown'
 
 const retryFetch = async (url: string, options = {}, maxRetries = 3) => {
   for (let i = 0; i < maxRetries; i++) {
@@ -46,6 +48,41 @@ interface FeedbackSectionProps {
   state: State
   dispatch: React.Dispatch<Action>
 }
+
+interface MarkdownErrorBoundaryState {
+  hasError: boolean;
+}
+
+interface MarkdownErrorBoundaryProps {
+  children: React.ReactNode;
+}
+
+class MarkdownErrorBoundary extends React.Component<MarkdownErrorBoundaryProps, MarkdownErrorBoundaryState> {
+  constructor(props: MarkdownErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(): MarkdownErrorBoundaryState {
+    return { hasError: true };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return <div className="text-red-500">Error rendering message</div>;
+    }
+
+    return this.props.children;
+  }
+}
+
+const MemoizedMarkdown = React.memo(({ content }: { content: string }) => (
+  <MarkdownErrorBoundary>
+    <ReactMarkdown className="prose dark:prose-invert max-w-none">
+      {content}
+    </ReactMarkdown>
+  </MarkdownErrorBoundary>
+));
 
 const FeedbackSection: React.FC<FeedbackSectionProps> = ({ group, toggleFeedback, handleStarClick, submitFeedback, state, dispatch }) => {
   return (
@@ -312,10 +349,10 @@ export default function Component({ state, dispatch }: ChatInterfaceProps) {
                         className={`max-w-[85%] rounded-2xl px-4 py-3 ${
                           message.role === 'user'
                             ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted'
+                            : 'bg-muted prose dark:prose-invert'
                         }`}
                       >
-                        {message.content}
+                        <MemoizedMarkdown content={message.content} />
                       </div>
                       <div className={`text-xs mt-1 ${message.role === 'user' ? 'text-right' : 'text-left'} text-muted-foreground`}>
                         {new Date().toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}

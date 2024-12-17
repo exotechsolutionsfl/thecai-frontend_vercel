@@ -91,11 +91,34 @@ const config: Config = {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
-  		}
+  		},
+      typography: {
+        DEFAULT: {
+          css: {
+            maxWidth: 'none',
+            color: 'inherit',
+            a: {
+              color: 'inherit',
+              '&:hover': {
+                color: 'var(--tw-prose-links)',
+              },
+            },
+            h1: { color: 'inherit' },
+            h2: { color: 'inherit' },
+            h3: { color: 'inherit' },
+            h4: { color: 'inherit' },
+            blockquote: { color: 'inherit' },
+            code: { color: 'inherit' },
+            'pre code': { color: 'inherit' },
+            strong: { color: 'inherit' },
+          },
+        },
+      },
   	}
   },
   plugins: [
     addVariablesForColors,
+    require("@tailwindcss/typography"),
     function ({ matchUtilities, theme }: any) {
       matchUtilities(
         {
@@ -108,8 +131,8 @@ const config: Config = {
         { values: flattenColorPalette(theme('backgroundColor')), type: 'color' }
       )
     },
-      require("tailwindcss-animate")
-],
+    require("tailwindcss-animate")
+  ],
 }
 
 export default config
