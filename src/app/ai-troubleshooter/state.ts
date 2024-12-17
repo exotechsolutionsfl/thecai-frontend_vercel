@@ -6,9 +6,16 @@ export type State = {
   selectedModel: string;
   selectedYear: string;
   query: string;
+  gptResponse: string;
+  searchResults: {
+    unified_text: string;
+    images: string[];
+    score: number;
+  }[];
   chatHistory: {
     role: string;
     content: string;
+    images?: string[];
     showFeedback?: boolean;
     feedbackSubmitted?: boolean;
     rating?: number;
@@ -40,6 +47,8 @@ export type Action =
   | { type: 'SET_SELECTED_MODEL'; payload: string }
   | { type: 'SET_SELECTED_YEAR'; payload: string }
   | { type: 'SET_QUERY'; payload: string }
+  | { type: 'SET_GPT_RESPONSE'; payload: string }
+  | { type: 'SET_SEARCH_RESULTS'; payload: State['searchResults'] }
   | { type: 'SET_CHAT_HISTORY'; payload: State['chatHistory'] }
   | { type: 'SET_LOADING'; payload: Partial<State['loading']> }
   | { type: 'SET_SHOW_CHAT'; payload: boolean }
@@ -58,6 +67,8 @@ export const initialState: State = {
   selectedModel: '',
   selectedYear: '',
   query: '',
+  gptResponse: '',
+  searchResults: [],
   chatHistory: [],
   loading: {
     makes: true,
@@ -89,6 +100,10 @@ export function reducer(state: State, action: Action): State {
       return { ...state, selectedYear: action.payload, chatHistory: [] }
     case 'SET_QUERY':
       return { ...state, query: action.payload }
+    case 'SET_GPT_RESPONSE':
+      return { ...state, gptResponse: action.payload }
+    case 'SET_SEARCH_RESULTS':
+      return { ...state, searchResults: action.payload }
     case 'SET_CHAT_HISTORY':
       return { ...state, chatHistory: action.payload }
     case 'SET_LOADING':

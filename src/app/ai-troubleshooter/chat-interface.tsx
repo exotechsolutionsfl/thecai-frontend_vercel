@@ -1,38 +1,15 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Settings, Star, ChevronDown, ChevronUp, Plus, Filter, X, Send } from 'lucide-react'
+import { Settings, Star, ChevronDown, ChevronUp, Send } from 'lucide-react'
 import { Alert, AlertDescription } from "@/components/ui/Alert"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Button } from "@/components/ui/Button"
 import { Card, CardContent } from "@/components/ui/Card"
 import { Input } from "@/components/ui/Input"
 import { Textarea } from "@/components/ui/Textarea"
 import { State, Action } from './state'
 import { apiFetch } from '@api/api'
-
-const useTopicSelection = (state: State, dispatch: React.Dispatch<Action>) => {
-  const fetchMainTopics = useCallback(async () => {
-    try {
-      const data = await apiFetch(`api/main-topics?make=${encodeURIComponent(state.selectedMake)}&model=${encodeURIComponent(state.selectedModel)}&year=${encodeURIComponent(state.selectedYear)}`)
-      if (data && data.main_topic) {
-        dispatch({ type: 'SET_MAIN_TOPICS', payload: data.main_topic })
-      } else {
-        dispatch({ type: 'SET_MAIN_TOPICS', payload: [] })
-      }
-    } catch (error) {
-      console.error("Error fetching main topics:", error)
-      dispatch({ type: 'SET_MAIN_TOPICS', payload: [] })
-    }
-  }, [state.selectedMake, state.selectedModel, state.selectedYear, dispatch])
-
-  useEffect(() => {
-    fetchMainTopics()
-  }, [fetchMainTopics])
-
-  return { fetchMainTopics }
-}
 
 const retryFetch = async (url: string, options = {}, maxRetries = 3) => {
   for (let i = 0; i < maxRetries; i++) {
@@ -171,9 +148,6 @@ const FeedbackSection: React.FC<FeedbackSectionProps> = ({ group, toggleFeedback
 export default function Component({ state, dispatch }: ChatInterfaceProps) {
   const chatEndRef = useRef<HTMLDivElement>(null)
   const [showScrollButton, setShowScrollButton] = useState(false)
-  const [showFilters, setShowFilters] = useState(false)
-
-  useTopicSelection(state, dispatch)
 
   useEffect(() => {
     if (chatEndRef.current) {
@@ -196,48 +170,31 @@ export default function Component({ state, dispatch }: ChatInterfaceProps) {
 
   const handleSearch = async () => {
     if (!state.selectedMake || !state.selectedModel || !state.selectedYear || !state.query) return;
-
+    
     dispatch({ type: 'SET_LOADING', payload: { search: true } });
     const userMessage = { role: 'user', content: state.query };
     dispatch({ type: 'SET_CHAT_HISTORY', payload: [...state.chatHistory, userMessage] });
-    const tempQuery = state.query;
-    dispatch({ type: 'SET_QUERY', payload: '' });
-
-    const stillWorkingTimeout = setTimeout(() => {
-      dispatch({ type: 'SET_CHAT_HISTORY', payload: [...state.chatHistory, userMessage, { role: 'system', content: "Still working on it...", isStillWorking: true }] });
-    }, 10000);
-
+    
     try {
       const searchParams = new URLSearchParams({
         make: state.selectedMake,
         model: state.selectedModel,
         year: state.selectedYear,
-        query: tempQuery,
+        query: state.query,
       });
 
-      if (state.selectedMainTopic) {
-        searchParams.append('main_topic', state.selectedMainTopic);
-      }
+      const data = await retryFetch(`api/search?${searchParams.toString()}`);
 
-      const data = await retryFetch(
-        `api/search?${searchParams.toString()}`,
-        {},
-        3
-      );
-
-      clearTimeout(stillWorkingTimeout);
       const gptResponse = data.gpt_response || "I'm sorry, I couldn't generate a response. Please try again.";
 
       dispatch({ type: 'SET_CHAT_HISTORY', payload: [...state.chatHistory, userMessage, { role: 'assistant', content: gptResponse, showFeedback: false }] });
+      dispatch({ type: 'SET_QUERY', payload: '' });
     } catch (error) {
-      clearTimeout(stillWorkingTimeout);
       console.error('Error performing search', error);
-
       let errorMessage = 'An error occurred. Please try again.';
       if (error instanceof Error) {
         errorMessage = error.message;
       }
-
       dispatch({ type: 'SET_CHAT_HISTORY', payload: [...state.chatHistory, userMessage, { role: 'assistant', content: errorMessage, showFeedback: false }] });
     } finally {
       dispatch({ type: 'SET_LOADING', payload: { search: false } });
@@ -311,19 +268,6 @@ export default function Component({ state, dispatch }: ChatInterfaceProps) {
     }
   }
 
-  const toggleFilters = () => {
-    setShowFilters(!showFilters)
-  }
-
-  const handleMainTopicChange = (topic: string) => {
-    dispatch({ type: 'SET_SELECTED_MAIN_TOPIC', payload: topic })
-    setShowFilters(false)
-  }
-
-  const removeMainTopic = () => {
-    dispatch({ type: 'SET_SELECTED_MAIN_TOPIC', payload: '' })
-  }
-
   return (
     <motion.div
       key="chat"
@@ -353,7 +297,7 @@ export default function Component({ state, dispatch }: ChatInterfaceProps) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3, delay: groupIndex * 0.1 }}
-                className="mb-6"
+                className={`mb-6 ${groupIndex === 0 ? 'mt-6' : ''}`}
               >
                 {group.map((message, messageIndex) => (
                   <motion.div
@@ -363,14 +307,19 @@ export default function Component({ state, dispatch }: ChatInterfaceProps) {
                     transition={{ duration: 0.3, delay: messageIndex * 0.1 }}
                     className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-2`}
                   >
-                    <div
-                      className={`max-w-[85%] rounded-2xl px-4 py-3 ${
-                        message.role === 'user'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted'
-                      }`}
-                    >
-                      {message.content}
+                    <div className="flex flex-col">
+                      <div
+                        className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+                          message.role === 'user'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted'
+                        }`}
+                      >
+                        {message.content}
+                      </div>
+                      <div className={`text-xs mt-1 ${message.role === 'user' ? 'text-right' : 'text-left'} text-muted-foreground`}>
+                        {new Date().toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </div>
                     </div>
                   </motion.div>
                 ))}
@@ -424,88 +373,6 @@ export default function Component({ state, dispatch }: ChatInterfaceProps) {
         )}
       </AnimatePresence>
       <div className="mt-4">
-        <AnimatePresence>
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="flex flex-wrap gap-2 mb-4 items-center"
-          >
-            <Button size="icon" variant="outline" onClick={toggleFilters} aria-label={showFilters ? "Hide filters" : "Show filters"}>
-              <AnimatePresence mode="wait">
-                {showFilters ? (
-                  <motion.div
-                    key="close"
-                    initial={{ rotate: -90 }}
-                    animate={{ rotate: 0 }}
-                    exit={{ rotate: 90 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <X className="w-4 h-4" />
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="filter"
-                    initial={{ rotate: -90 }}
-                    animate={{ rotate: 0 }}
-                    exit={{ rotate: 90 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <Plus className="w-4 h-4" />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </Button>
-            <AnimatePresence>
-              {showFilters && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline">
-                        <Filter className="w-4 h-4 mr-2" />
-                        {state.selectedMainTopic || 'Select Main Topic'}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-56">
-                      <div className="grid gap-4">
-                        {state.mainTopics.map((topic) => (
-                          <Button
-                            key={topic}
-                            variant={state.selectedMainTopic === topic ? "default" : "ghost"}
-                            className="justify-start"
-                            onClick={() => handleMainTopicChange(topic)}
-                          >
-                            {topic}
-                          </Button>
-                        ))}
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                </motion.div>
-              )}
-            </AnimatePresence>
-            <AnimatePresence>
-              {state.selectedMainTopic && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <Button variant="secondary" className="gap-2">
-                    {state.selectedMainTopic}
-                    <X className="w-4 h-4 text-muted-foreground hover:text-foreground" onClick={removeMainTopic} />
-                  </Button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
-        </AnimatePresence>
         <div className="flex space-x-4">
           <div className="flex-grow relative">
             <Input
