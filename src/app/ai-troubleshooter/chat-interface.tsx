@@ -194,7 +194,7 @@ const WelcomeMessage = () => (
     <div>
       <h2 className="text-lg font-semibold">Welcome to {AI_NAME}</h2>
       <p className="text-sm text-muted-foreground">
-        I'm your automotive knowledge assistant. How can I help you today?
+        I&apos;m your automotive knowledge assistant. How can I help you today?
       </p>
     </div>
   </div>
@@ -242,7 +242,7 @@ export default function Component({ state, dispatch }: ChatInterfaceProps) {
 
       const data = await retryFetch(`api/search?${searchParams.toString()}`);
 
-      const gptResponse = data.gpt_response || "I'm sorry, I couldn't generate a response. Please try again.";
+      const gptResponse = data.gpt_response || "I&apos;m sorry, I couldn&apos;t generate a response. Please try again.";
 
       dispatch({ type: 'SET_CHAT_HISTORY', payload: [...state.chatHistory, userMessage, { role: 'assistant', content: gptResponse, showFeedback: false }] });
       dispatch({ type: 'SET_QUERY', payload: '' });
@@ -344,7 +344,7 @@ export default function Component({ state, dispatch }: ChatInterfaceProps) {
       <div className="flex-grow overflow-hidden">
         <div className="h-full flex flex-col">
           <div className="flex-grow overflow-y-auto" onScroll={handleScroll}>
-            <div className="max-w-6xl w-full mx-auto px-4 py-2">
+            <div className="max-w-4xl w-full mx-auto px-4 py-2">
               {state.chatHistory.length === 0 && <WelcomeMessage />}
               <AnimatePresence>
                 {groupMessages(state.chatHistory).map((group, groupIndex) => (
@@ -364,7 +364,7 @@ export default function Component({ state, dispatch }: ChatInterfaceProps) {
                           transition={{ duration: 0.3, delay: messageIndex * 0.1 }}
                           className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-2`}
                         >
-                          <div className={`rounded-lg px-3 py-2 max-w-[90%] text-sm leading-relaxed ${
+                          <div className={`rounded-lg px-3 py-2 max-w-[85%] text-sm leading-relaxed ${
                             message.role === 'user'
                               ? 'bg-primary text-primary-foreground'
                               : 'bg-muted'
@@ -418,7 +418,7 @@ export default function Component({ state, dispatch }: ChatInterfaceProps) {
             </div>
           </div>
           <div className="flex-none bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="max-w-6xl mx-auto px-4 py-3">
+            <div className="max-w-4xl mx-auto px-4 py-3">
               <div className="flex space-x-2">
                 <Input
                   type="text"
