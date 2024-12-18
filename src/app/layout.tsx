@@ -31,7 +31,9 @@ export default function RootLayout({
         <ThemeProvider>
           <VehicleProvider>
             <Vessel>
-              {children}
+              <div className="pt-16">
+                {children}
+              </div>
             </Vessel>
           </VehicleProvider>
         </ThemeProvider>

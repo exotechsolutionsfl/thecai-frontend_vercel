@@ -3,7 +3,7 @@
 import React from 'react';
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Settings, Star, ChevronDown, ChevronUp, Send } from 'lucide-react'
+import { Settings, Star, ChevronDown, ChevronUp, Send, BookOpen } from 'lucide-react'
 import { Alert, AlertDescription } from "@/components/ui/Alert"
 import { Button } from "@/components/ui/Button"
 import { Card, CardContent } from "@/components/ui/Card"
@@ -12,6 +12,8 @@ import { Textarea } from "@/components/ui/Textarea"
 import { State, Action } from './state'
 import { apiFetch } from '@api/api'
 import ReactMarkdown from 'react-markdown'
+
+const AI_NAME = 'Autolex';
 
 const retryFetch = async (url: string, options = {}, maxRetries = 3) => {
   for (let i = 0; i < maxRetries; i++) {
@@ -91,7 +93,7 @@ const FeedbackSection: React.FC<FeedbackSectionProps> = ({ group, toggleFeedback
         variant="ghost"
         size="sm"
         onClick={() => toggleFeedback(state.chatHistory.findIndex(msg => msg.content === group.content))}
-        className="text-xs py-1 h-6 px-2"
+        className="text-xs py-1 h-6 px-2 ml-8 mb-2"
       >
         {group.showFeedback ? (
           <>
@@ -114,10 +116,10 @@ const FeedbackSection: React.FC<FeedbackSectionProps> = ({ group, toggleFeedback
             transition={{ duration: 0.3 }}
             className="mt-2"
           >
-            <Card className="bg-background/50 backdrop-blur-sm">
+            <Card className="bg-background/50 backdrop-blur-sm ml-8 mb-4">
               <CardContent className="p-3 text-sm">
                 <h4 className="text-sm font-medium mb-2">Rate this response</h4>
-                <div className="flex mb-2">
+                <div className="flex justify-center mb-2">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <Button
                       key={star}
@@ -138,7 +140,7 @@ const FeedbackSection: React.FC<FeedbackSectionProps> = ({ group, toggleFeedback
                 </div>
                 <Textarea
                   placeholder="Additional comments (optional)"
-                  className="mb-2 text-sm"
+                  className="mb-2 text-sm w-full"
                   rows={2}
                   onChange={(e) => {
                     dispatch({
@@ -186,9 +188,22 @@ const FeedbackSection: React.FC<FeedbackSectionProps> = ({ group, toggleFeedback
   )
 }
 
+const WelcomeMessage = () => (
+  <div className="flex items-center space-x-2 mb-4 p-4 bg-muted rounded-lg">
+    <BookOpen className="w-6 h-6 text-primary" />
+    <div>
+      <h2 className="text-lg font-semibold">Welcome to {AI_NAME}</h2>
+      <p className="text-sm text-muted-foreground">
+        I'm your automotive knowledge assistant. How can I help you today?
+      </p>
+    </div>
+  </div>
+);
+
 export default function Component({ state, dispatch }: ChatInterfaceProps) {
   const chatEndRef = useRef<HTMLDivElement>(null)
   const [showScrollButton, setShowScrollButton] = useState(false)
+  const [isTyping, setIsTyping] = useState(false);
 
   useEffect(() => {
     if (chatEndRef.current) {
@@ -215,6 +230,7 @@ export default function Component({ state, dispatch }: ChatInterfaceProps) {
     dispatch({ type: 'SET_LOADING', payload: { search: true } });
     const userMessage = { role: 'user', content: state.query };
     dispatch({ type: 'SET_CHAT_HISTORY', payload: [...state.chatHistory, userMessage] });
+    setIsTyping(true);
     
     try {
       const searchParams = new URLSearchParams({
@@ -239,6 +255,7 @@ export default function Component({ state, dispatch }: ChatInterfaceProps) {
       dispatch({ type: 'SET_CHAT_HISTORY', payload: [...state.chatHistory, userMessage, { role: 'assistant', content: errorMessage, showFeedback: false }] });
     } finally {
       dispatch({ type: 'SET_LOADING', payload: { search: false } });
+      setIsTyping(false);
     }
   };
 
@@ -310,8 +327,8 @@ export default function Component({ state, dispatch }: ChatInterfaceProps) {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-background">
-      <div className="flex-none p-4">
+    <div className="flex flex-col h-[calc(100vh-4rem)] bg-background">
+      <div className="flex-none p-4 sticky top-0 z-10 bg-background">
         <Button
           variant="ghost"
           size="sm"
@@ -327,7 +344,8 @@ export default function Component({ state, dispatch }: ChatInterfaceProps) {
       <div className="flex-grow overflow-hidden">
         <div className="h-full flex flex-col">
           <div className="flex-grow overflow-y-auto" onScroll={handleScroll}>
-            <div className="max-w-2xl w-full mx-auto px-4 py-2">
+            <div className="max-w-6xl w-full mx-auto px-4 py-2">
+              {state.chatHistory.length === 0 && <WelcomeMessage />}
               <AnimatePresence>
                 {groupMessages(state.chatHistory).map((group, groupIndex) => (
                   <motion.div
@@ -339,32 +357,33 @@ export default function Component({ state, dispatch }: ChatInterfaceProps) {
                     className={`mb-4 ${groupIndex === 0 ? 'mt-4' : ''}`}
                   >
                     {group.map((message, messageIndex) => (
-                      <motion.div
-                        key={messageIndex}
-                        initial={{ opacity: 0, x: message.role === 'user' ? 20 : -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.3, delay: messageIndex * 0.1 }}
-                        className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-2`}
-                      >
-                        <div className={`rounded-lg px-3 py-2 max-w-[85%] text-sm leading-relaxed ${
-                          message.role === 'user'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted'
-                        }`}>
-                          <MemoizedMarkdown content={message.content} className="text-sm" />
-                        </div>
-                      </motion.div>
+                      <React.Fragment key={messageIndex}>
+                        <motion.div
+                          initial={{ opacity: 0, x: message.role === 'user' ? 20 : -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.3, delay: messageIndex * 0.1 }}
+                          className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-2`}
+                        >
+                          <div className={`rounded-lg px-3 py-2 max-w-[90%] text-sm leading-relaxed ${
+                            message.role === 'user'
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted'
+                          }`}>
+                            <MemoizedMarkdown content={message.content} className="text-sm" />
+                          </div>
+                        </motion.div>
+                        {message.role === 'assistant' && !message.feedbackSubmitted && (
+                          <FeedbackSection
+                            group={message}
+                            toggleFeedback={toggleFeedback}
+                            handleStarClick={handleStarClick}
+                            submitFeedback={submitFeedback}
+                            state={state}
+                            dispatch={dispatch}
+                          />
+                        )}
+                      </React.Fragment>
                     ))}
-                    {group[0].role === 'assistant' && !group[0].feedbackSubmitted && (
-                      <FeedbackSection
-                        group={group[0]}
-                        toggleFeedback={toggleFeedback}
-                        handleStarClick={handleStarClick}
-                        submitFeedback={submitFeedback}
-                        state={state}
-                        dispatch={dispatch}
-                      />
-                    )}
                     <AnimatePresence>
                       {group[0].feedbackSubmitted && group[0].feedbackSuccess && (
                         <motion.div
@@ -382,11 +401,24 @@ export default function Component({ state, dispatch }: ChatInterfaceProps) {
                   </motion.div>
                 ))}
               </AnimatePresence>
+              {isTyping && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="flex justify-start mb-2"
+                >
+                  <div className="rounded-lg px-3 py-2 bg-muted">
+                    <span className="inline-block animate-pulse">{AI_NAME} is thinking...</span>
+                  </div>
+                </motion.div>
+              )}
               <div ref={chatEndRef} />
             </div>
           </div>
           <div className="flex-none bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="max-w-2xl mx-auto px-4 py-3">
+            <div className="max-w-6xl mx-auto px-4 py-3">
               <div className="flex space-x-2">
                 <Input
                   type="text"
@@ -419,7 +451,7 @@ export default function Component({ state, dispatch }: ChatInterfaceProps) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             transition={{ duration: 0.3 }}
-            className="fixed bottom-24 right-4"
+            className="fixed bottom-20 right-4"
           >
             <Button
               size="icon"
@@ -434,3 +466,4 @@ export default function Component({ state, dispatch }: ChatInterfaceProps) {
     </div>
   )
 }
+

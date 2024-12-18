@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronRight, X, Plus, MessageSquare, ChevronLeft, Moon, Sun, FileText, Menu } from 'lucide-react'
+import { ChevronRight, X, Plus, MessageSquare, ChevronLeft, Moon, Sun, Menu } from 'lucide-react'
 import { useSavedVehicles } from '@context/VehicleContext'
 import { useTheme } from '@context/ThemeProvider'
 import { Toaster, toast } from 'react-hot-toast'
@@ -14,6 +14,7 @@ import { Card, CardContent } from "@/components/ui/Card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/Textarea"
+import { FileText } from 'lucide-react'
 
 interface BreadcrumbItem {
   label: string
@@ -118,7 +119,7 @@ export default function Vessel({ children }: VesselProps) {
 
   return (
     <div className="flex flex-col h-screen">
-      <header className="flex-none bg-background shadow-md z-10">
+      <header className="flex-none bg-background shadow-md z-10 h-16">
         <Toaster />
         <div className="p-4 flex items-center justify-between relative">
           <Link href="/" className="text-2xl font-bold hover:text-primary transition-colors duration-300">
@@ -156,7 +157,7 @@ export default function Vessel({ children }: VesselProps) {
         )}
       </header>
 
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto mt-16">
         {children}
       </main>
 
