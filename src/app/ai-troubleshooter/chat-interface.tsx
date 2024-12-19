@@ -3,7 +3,7 @@
 import React from 'react';
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Settings, Star, ChevronDown, ChevronUp, Send, BookOpen } from 'lucide-react'
+import { Settings, Star, ChevronDown, ChevronUp, Send, BookOpen, Bot, User } from 'lucide-react'
 import { Alert, AlertDescription } from "@/components/ui/Alert"
 import { Button } from "@/components/ui/Button"
 import { Card, CardContent } from "@/components/ui/Card"
@@ -83,7 +83,7 @@ const MemoizedMarkdown = React.memo(({ content, className }: { content: string, 
     <ReactMarkdown 
       className={`prose dark:prose-invert max-w-none ${className}`}
       components={{
-        a: ({ node, ...props }) => (
+        a: (props) => (
           <a {...props} target="_blank" rel="noopener noreferrer" />
         ),
       }}
@@ -211,6 +211,7 @@ export default function Component({ state, dispatch }: ChatInterfaceProps) {
   const chatEndRef = useRef<HTMLDivElement>(null)
   const [showScrollButton, setShowScrollButton] = useState(false)
   const [isTyping, setIsTyping] = useState(false);
+  const [inputValue, setInputValue] = useState('');
 
   useEffect(() => {
     if (chatEndRef.current) {
@@ -220,6 +221,8 @@ export default function Component({ state, dispatch }: ChatInterfaceProps) {
 
   useEffect(() => {
     dispatch({ type: 'CLEAR_CHAT_HISTORY' });
+    setInputValue('');
+    setIsTyping(false);
   }, [state.selectedMake, state.selectedModel, state.selectedYear, dispatch]);
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -232,27 +235,27 @@ export default function Component({ state, dispatch }: ChatInterfaceProps) {
   }
 
   const handleSearch = async () => {
-    if (!state.selectedMake || !state.selectedModel || !state.selectedYear || !state.query) return;
+    if (!state.selectedMake || !state.selectedModel || !state.selectedYear || !inputValue.trim()) return;
     
     dispatch({ type: 'SET_LOADING', payload: { search: true } });
-    const userMessage = { role: 'user', content: state.query };
+    const userMessage = { role: 'user', content: inputValue };
     dispatch({ type: 'SET_CHAT_HISTORY', payload: [...state.chatHistory, userMessage] });
     setIsTyping(true);
+    setInputValue('');
     
     try {
       const searchParams = new URLSearchParams({
         make: state.selectedMake,
         model: state.selectedModel,
         year: state.selectedYear,
-        query: state.query,
+        query: inputValue,
       });
 
       const data = await retryFetch(`api/search?${searchParams.toString()}`);
 
-      const gptResponse = data.gpt_response || "I&apos;m sorry, I couldn&apos;t generate a response. Please try again.";
+      const gptResponse = data.gpt_response || "I'm sorry, I couldn't generate a response. Please try again.";
 
       dispatch({ type: 'SET_CHAT_HISTORY', payload: [...state.chatHistory, userMessage, { role: 'assistant', content: gptResponse, showFeedback: false }] });
-      dispatch({ type: 'SET_QUERY', payload: '' });
     } catch (error) {
       console.error('Error performing search', error);
       let errorMessage = 'An error occurred. Please try again.';
@@ -369,15 +372,25 @@ export default function Component({ state, dispatch }: ChatInterfaceProps) {
                           initial={{ opacity: 0, x: message.role === 'user' ? 20 : -20 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ duration: 0.3, delay: messageIndex * 0.1 }}
-                          className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-2`}
+                          className={`flex items-start mb-2 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                         >
-                          <div className={`rounded-lg px-3 py-2 max-w-[95%] text-sm leading-relaxed ${
+                          {message.role === 'assistant' && (
+                            <div className="flex-shrink-0 mr-2">
+                              <Bot className="w-8 h-8 text-primary" />
+                            </div>
+                          )}
+                          <div className={`rounded-lg px-3 py-2 max-w-[80%] text-sm leading-relaxed ${
                             message.role === 'user'
                               ? 'bg-primary text-primary-foreground'
                               : 'bg-muted'
                           }`}>
                             <MemoizedMarkdown content={message.content} className="text-sm" />
                           </div>
+                          {message.role === 'user' && (
+                            <div className="flex-shrink-0 ml-2">
+                              <User className="w-8 h-8 text-primary" />
+                            </div>
+                          )}
                         </motion.div>
                         {message.role === 'assistant' && !message.feedbackSubmitted && (
                           <FeedbackSection
@@ -414,8 +427,11 @@ export default function Component({ state, dispatch }: ChatInterfaceProps) {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.3 }}
-                  className="flex justify-start mb-2"
+                  className="flex items-start justify-start mb-2"
                 >
+                  <div className="flex-shrink-0 mr-2">
+                    <Settings className="w-8 h-8 text-primary animate-spin" />
+                  </div>
                   <div className="rounded-lg px-3 py-2 bg-muted">
                     <span className="inline-block animate-pulse">{AI_NAME} is thinking...</span>
                   </div>
@@ -429,23 +445,19 @@ export default function Component({ state, dispatch }: ChatInterfaceProps) {
               <div className="flex space-x-2">
                 <Input
                   type="text"
-                  value={state.query}
-                  onChange={(e) => dispatch({ type: 'SET_QUERY', payload: e.target.value.slice(0, 280) })}
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value.slice(0, 280))}
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                   placeholder="Type your question here..."
                   disabled={state.loading.search}
                   className="flex-grow text-sm"
                 />
-                <Button onClick={handleSearch} disabled={!state.query || state.loading.search} size="sm" className="h-8 w-8 p-0">
-                  {state.loading.search ? (
-                    <Settings className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Send className="w-4 h-4" />
-                  )}
+                <Button onClick={handleSearch} disabled={!inputValue.trim() || state.loading.search} size="sm" className="h-8 w-8 p-0">
+                  <Send className="w-4 h-4" />
                 </Button>
               </div>
               <div className="text-xs text-right mt-1 text-muted-foreground">
-                {state.query.length}/280
+                {inputValue.length}/280
               </div>
             </div>
           </div>
