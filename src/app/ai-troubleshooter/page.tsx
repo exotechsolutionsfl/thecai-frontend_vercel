@@ -30,8 +30,8 @@ export default function AITroubleshooter() {
   }, [state.selectedMake, state.selectedModel, state.selectedYear])
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center overflow-hidden bg-background pt-16 px-4">
-      <div className="w-full h-full max-w-2xl mx-auto flex flex-col justify-center">
+    <div className="fixed inset-0 flex items-center justify-center overflow-hidden bg-background pt-16 px-4 lg:px-8">
+      <div className="w-full h-full max-w-screen-2xl mx-auto flex flex-col justify-center">
         <AnimatePresence mode="wait">
           {!state.showChat ? (
             <motion.div
@@ -42,7 +42,7 @@ export default function AITroubleshooter() {
               transition={{ duration: 0.3 }}
               className="w-full max-w-md mx-auto"
             >
-              <Card className="w-full max-w-md mx-auto max-h-[calc(100vh-8rem)] overflow-y-auto">
+              <Card className="w-full max-w-7xl mx-auto max-h-[calc(100vh-8rem)] overflow-y-auto">
                 <CardContent className="pt-6">
                   <h1 className="text-2xl font-bold mb-8 text-center">
                     AI Troubleshooter

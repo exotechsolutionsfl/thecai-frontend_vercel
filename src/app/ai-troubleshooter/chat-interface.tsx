@@ -337,7 +337,7 @@ export default function Component({ state, dispatch }: ChatInterfaceProps) {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] bg-background">
+    <div className="flex flex-col h-[calc(100vh-4rem)] bg-background w-full max-w-screen-2xl mx-auto px-4 lg:px-8">
       <div className="flex-none p-4 sticky top-0 z-10 bg-background">
         <Button
           variant="ghost"
@@ -354,7 +354,7 @@ export default function Component({ state, dispatch }: ChatInterfaceProps) {
       <div className="flex-grow overflow-hidden">
         <div className="h-full flex flex-col">
           <div className="flex-grow overflow-y-auto" onScroll={handleScroll}>
-            <div className="max-w-5xl w-full mx-auto px-4 py-2">
+            <div className="w-full mx-auto px-4 py-2 sm:w-[90%] md:w-[85%] lg:w-[75%] xl:w-[70%] max-w-7xl">
               {state.chatHistory.length === 0 && <WelcomeMessage />}
               <AnimatePresence>
                 {groupMessages(state.chatHistory).map((group, groupIndex) => (
@@ -441,7 +441,7 @@ export default function Component({ state, dispatch }: ChatInterfaceProps) {
             </div>
           </div>
           <div className="flex-none bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="max-w-5xl mx-auto px-4 py-3">
+            <div className="w-full mx-auto px-4 py-3 sm:w-[90%] md:w-[85%] lg:w-[75%] xl:w-[70%] max-w-7xl">
               <div className="flex space-x-2">
                 <Input
                   type="text"
