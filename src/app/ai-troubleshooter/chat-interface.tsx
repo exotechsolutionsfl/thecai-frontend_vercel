@@ -80,7 +80,14 @@ class MarkdownErrorBoundary extends React.Component<MarkdownErrorBoundaryProps, 
 
 const MemoizedMarkdown = React.memo(({ content, className }: { content: string, className?: string }) => (
   <MarkdownErrorBoundary>
-    <ReactMarkdown className={`prose dark:prose-invert max-w-none ${className}`}>
+    <ReactMarkdown 
+      className={`prose dark:prose-invert max-w-none ${className}`}
+      components={{
+        a: ({ node, ...props }) => (
+          <a {...props} target="_blank" rel="noopener noreferrer" />
+        ),
+      }}
+    >
       {content}
     </ReactMarkdown>
   </MarkdownErrorBoundary>
@@ -344,7 +351,7 @@ export default function Component({ state, dispatch }: ChatInterfaceProps) {
       <div className="flex-grow overflow-hidden">
         <div className="h-full flex flex-col">
           <div className="flex-grow overflow-y-auto" onScroll={handleScroll}>
-            <div className="max-w-4xl w-full mx-auto px-4 py-2">
+            <div className="max-w-5xl w-full mx-auto px-4 py-2">
               {state.chatHistory.length === 0 && <WelcomeMessage />}
               <AnimatePresence>
                 {groupMessages(state.chatHistory).map((group, groupIndex) => (
@@ -364,7 +371,7 @@ export default function Component({ state, dispatch }: ChatInterfaceProps) {
                           transition={{ duration: 0.3, delay: messageIndex * 0.1 }}
                           className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-2`}
                         >
-                          <div className={`rounded-lg px-3 py-2 max-w-[85%] text-sm leading-relaxed ${
+                          <div className={`rounded-lg px-3 py-2 max-w-[95%] text-sm leading-relaxed ${
                             message.role === 'user'
                               ? 'bg-primary text-primary-foreground'
                               : 'bg-muted'
@@ -418,7 +425,7 @@ export default function Component({ state, dispatch }: ChatInterfaceProps) {
             </div>
           </div>
           <div className="flex-none bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="max-w-4xl mx-auto px-4 py-3">
+            <div className="max-w-5xl mx-auto px-4 py-3">
               <div className="flex space-x-2">
                 <Input
                   type="text"
@@ -466,4 +473,3 @@ export default function Component({ state, dispatch }: ChatInterfaceProps) {
     </div>
   )
 }
-
