@@ -28,7 +28,7 @@ function SelectDropdown({ label, options, value, onChange, loading, disabled }: 
         <SelectTrigger id={label}>
           <SelectValue placeholder={`Select ${label}`} />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="max-h-[300px] overflow-y-auto">
           {options.length > 0 ? (
             options.map((option) => (
               <SelectItem key={option} value={option}>
@@ -270,4 +270,3 @@ export default function VehicleSelection() {
     </div>
   )
 }
-

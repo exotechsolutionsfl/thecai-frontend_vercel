@@ -110,7 +110,7 @@ export default function VehicleSelection({ state, dispatch, onConfirm }: Vehicle
               <SelectTrigger id="make">
                 <SelectValue placeholder="Select Make" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-[300px] overflow-y-auto">
                 {state.makes.map(make => (
                   <SelectItem key={make} value={make}>{make}</SelectItem>
                 ))}
@@ -131,7 +131,7 @@ export default function VehicleSelection({ state, dispatch, onConfirm }: Vehicle
                   <SelectTrigger id="model">
                     <SelectValue placeholder="Select Model" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-[300px] overflow-y-auto">
                     {state.models.map(model => (
                       <SelectItem key={model} value={model}>{model}</SelectItem>
                     ))}
@@ -154,7 +154,7 @@ export default function VehicleSelection({ state, dispatch, onConfirm }: Vehicle
                   <SelectTrigger id="year">
                     <SelectValue placeholder="Select Year" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-[300px] overflow-y-auto">
                     {state.years.map(year => (
                       <SelectItem key={year} value={year}>{year}</SelectItem>
                     ))}
