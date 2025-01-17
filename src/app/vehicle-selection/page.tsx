@@ -24,7 +24,7 @@ function SelectDropdown({ label, options, value, onChange, loading, disabled }: 
   return (
     <div className="space-y-2">
       <Label htmlFor={label}>{label}</Label>
-      <Select value={value} onValueChange={onChange} disabled={disabled || loading}>
+      <Select value={value} onValueChange={onChange} disabled={disabled || loading || options.length === 0}>
         <SelectTrigger id={label}>
           <SelectValue placeholder={`Select ${label}`} />
         </SelectTrigger>
@@ -55,14 +55,17 @@ export default function VehicleSelection() {
   const [makes, setMakes] = useState<string[]>([])
   const [models, setModels] = useState<string[]>([])
   const [years, setYears] = useState<string[]>([])
+  const [engines, setEngines] = useState<string[]>([])
   const [selectedMake, setSelectedMake] = useState('')
   const [selectedModel, setSelectedModel] = useState('')
   const [selectedYear, setSelectedYear] = useState('')
+  const [selectedEngine, setSelectedEngine] = useState('')
   const [loading, setLoading] = useState({
     page: true,
     makes: true,
     models: false,
     years: false,
+    engines: false,
     vehicleType: false,
   })
   const [isSaved, setIsSaved] = useState(false)
@@ -110,10 +113,28 @@ export default function VehicleSelection() {
     }
   }
 
+  const fetchEngines = async (make: string, model: string, year: string) => {
+    setLoading(prev => ({ ...prev, engines: true }))
+    try {
+      const data = await apiFetch(`api/vehicle-engine?make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}&year=${encodeURIComponent(year)}`)
+      const engineOptions = data.engine ? [data.engine] : []
+      setEngines(engineOptions)
+      if (engineOptions.length === 1) {
+        setSelectedEngine(engineOptions[0])
+      }
+    } catch (error) {
+      console.error(`Error fetching engines for ${make} ${model} ${year}:`, error)
+      setEngines([])
+    } finally {
+      setLoading(prev => ({ ...prev, engines: false }))
+    }
+  }
+
   const handleMakeChange = (make: string) => {
     setSelectedMake(make)
     setSelectedModel('')
     setSelectedYear('')
+    setSelectedEngine('')
     setIsSaved(false)
     if (make) {
       fetchModels(make)
@@ -125,6 +146,7 @@ export default function VehicleSelection() {
   const handleModelChange = (model: string) => {
     setSelectedModel(model)
     setSelectedYear('')
+    setSelectedEngine('')
     setIsSaved(false)
     if (selectedMake && model) {
       fetchYears(selectedMake, model)
@@ -135,14 +157,25 @@ export default function VehicleSelection() {
 
   const handleYearChange = (year: string) => {
     setSelectedYear(year)
+    setSelectedEngine('')
+    setIsSaved(false)
+    if (selectedMake && selectedModel && year) {
+      fetchEngines(selectedMake, selectedModel, year)
+    } else {
+      setEngines([])
+    }
+  }
+
+  const handleEngineChange = (engine: string) => {
+    setSelectedEngine(engine)
     setIsSaved(false)
   }
 
   const handleContinue = async () => {
-    if (selectedMake && selectedModel && selectedYear) {
+    if (selectedMake && selectedModel && selectedYear && selectedEngine) {
       setLoading(prev => ({ ...prev, vehicleType: true }))
       try {
-        const url = `/dynamic-content?make=${encodeURIComponent(selectedMake)}&model=${encodeURIComponent(selectedModel)}&year=${encodeURIComponent(selectedYear)}`;
+        const url = `/dynamic-content?make=${encodeURIComponent(selectedMake)}&model=${encodeURIComponent(selectedModel)}&year=${encodeURIComponent(selectedYear)}&engine=${encodeURIComponent(selectedEngine)}`;
         router.push(url);
       } catch (error) {
         console.error("Error checking vehicle type:", error)
@@ -151,18 +184,18 @@ export default function VehicleSelection() {
         setLoading(prev => ({ ...prev, vehicleType: false }))
       }
     } else {
-      alert("Please select make, model, and year.")
+      alert("Please select make, model, year, and engine.")
     }
   }
 
   const handleSaveVehicle = () => {
-    if (selectedMake && selectedModel && selectedYear) {
-      const newVehicle = { make: selectedMake, model: selectedModel, year: selectedYear }
+    if (selectedMake && selectedModel && selectedYear && selectedEngine) {
+      const newVehicle = { make: selectedMake, model: selectedModel, year: selectedYear, engine: selectedEngine }
       const updatedVehicles = [...savedVehicles, newVehicle]
       setSavedVehicles(updatedVehicles)
       setIsSaved(true)
     } else {
-      alert('Please select make, model, and year before saving.')
+      alert('Please select make, model, year, and engine before saving.')
     }
   }
 
@@ -233,6 +266,27 @@ export default function VehicleSelection() {
             <AnimatePresence mode="wait">
               {selectedYear && (
                 <motion.div
+                  key="engine"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <SelectDropdown
+                    label="Engine"
+                    options={engines}
+                    value={selectedEngine}
+                    onChange={handleEngineChange}
+                    loading={loading.engines}
+                    disabled={!selectedYear}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <AnimatePresence mode="wait">
+              {selectedEngine && (
+                <motion.div
                   key="buttons"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -243,7 +297,7 @@ export default function VehicleSelection() {
                   <Button
                     onClick={handleContinue}
                     className="flex-1"
-                    disabled={loading.vehicleType || !selectedYear}
+                    disabled={loading.vehicleType || !selectedEngine}
                   >
                     {loading.vehicleType ? (
                       <Loader2 className="w-4 h-4 animate-spin mr-2" />
@@ -253,7 +307,7 @@ export default function VehicleSelection() {
                   <Button
                     onClick={handleSaveVehicle}
                     variant="outline"
-                    disabled={isSaved || !selectedYear}
+                    disabled={isSaved || !selectedEngine}
                   >
                     {isSaved ? (
                       <Check className="w-4 h-4 text-green-500" />

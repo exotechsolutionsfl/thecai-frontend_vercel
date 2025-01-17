@@ -180,7 +180,7 @@ export default function DynamicContent() {
   if (loading && menuData.length === 0) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <Loading message="Loading menu data..." />
+        <Loading message="Loading data..." />
       </div>
     )
   }
