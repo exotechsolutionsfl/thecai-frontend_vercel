@@ -7,7 +7,6 @@ import { Card, CardContent } from "@/components/ui/Card"
 import Image from 'next/image'
 import { TreeBranch } from '@/components/TreeBranch'
 import Loading from '@/components/ui/loading'
-import { Loader2 } from 'lucide-react'
 
 
 interface MenuItem {
@@ -19,18 +18,6 @@ interface MenuItem {
   content?: {
     [key: string]: string;
   }[];
-}
-
-interface TreeBranchProps {
-  children: React.ReactNode
-  level: number
-  isLastChild: boolean
-  isFolder: boolean
-  isExpanded: boolean
-  name: string
-  onClick: () => void
-  hasChildren: boolean
-  isLoading: boolean
 }
 
 

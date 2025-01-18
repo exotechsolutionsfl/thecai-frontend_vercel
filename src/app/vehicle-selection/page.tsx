@@ -22,31 +22,33 @@ interface SelectDropdownProps {
 
 function SelectDropdown({ label, options, value, onChange, loading, disabled }: SelectDropdownProps) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 relative">
       <Label htmlFor={label}>{label}</Label>
-      <Select value={value} onValueChange={onChange} disabled={disabled || loading || options.length === 0}>
-        <SelectTrigger id={label}>
-          <SelectValue placeholder={`Select ${label}`} />
-        </SelectTrigger>
-        <SelectContent className="max-h-[300px] overflow-y-auto">
-          {options.length > 0 ? (
-            options.map((option) => (
-              <SelectItem key={option} value={option}>
-                {option}
+      <div className="relative">
+        <Select value={value} onValueChange={onChange} disabled={disabled || loading || options.length === 0}>
+          <SelectTrigger id={label} className={loading ? 'opacity-50' : ''}>
+            <SelectValue placeholder={`Select ${label}`} />
+          </SelectTrigger>
+          <SelectContent className="max-h-[300px] overflow-y-auto">
+            {options.length > 0 ? (
+              options.map((option) => (
+                <SelectItem key={option} value={option}>
+                  {option}
+                </SelectItem>
+              ))
+            ) : (
+              <SelectItem value="_empty" disabled>
+                No {label} available
               </SelectItem>
-            ))
-          ) : (
-            <SelectItem value="_empty" disabled>
-              No {label} available
-            </SelectItem>
-          )}
-        </SelectContent>
-      </Select>
-      {loading && (
-        <div className="flex justify-center">
-          <Loader2 className="h-5 w-5 animate-spin text-primary" />
-        </div>
-      )}
+            )}
+          </SelectContent>
+        </Select>
+        {loading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/50">
+            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+          </div>
+        )}
+      </div>
     </div>
   )
 }
