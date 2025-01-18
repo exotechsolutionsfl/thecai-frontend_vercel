@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { Loader2, Save, Check } from 'lucide-react'
+import { Loader2, Save, Check, ChevronDown } from 'lucide-react'
 import { apiFetch } from '@api/api'
 import { useSavedVehicles } from '@context/VehicleContext'
 import { Button } from "@/components/ui/Button"
@@ -23,13 +23,14 @@ interface SelectDropdownProps {
 function SelectDropdown({ label, options, value, onChange, loading, disabled }: SelectDropdownProps) {
   return (
     <div className="space-y-2 relative">
-      <Label htmlFor={label}>{label}</Label>
+      <Label htmlFor={label} className="text-sm font-medium">{label}</Label>
       <div className="relative">
         <Select value={value} onValueChange={onChange} disabled={disabled || loading || options.length === 0}>
-          <SelectTrigger id={label} className={loading ? 'opacity-50' : ''}>
+          <SelectTrigger id={label} className={`w-full ${loading ? 'opacity-50' : ''}`}>
             <SelectValue placeholder={`Select ${label}`} />
+            <ChevronDown className="h-4 w-4 opacity-50" />
           </SelectTrigger>
-          <SelectContent className="max-h-[300px] overflow-y-auto">
+          <SelectContent className="max-h-[200px] overflow-y-auto">
             {options.length > 0 ? (
               options.map((option) => (
                 <SelectItem key={option} value={option}>
@@ -210,11 +211,11 @@ export default function VehicleSelection() {
   }
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardContent className="pt-6">
           <h1 className="text-2xl font-bold mb-6 text-center">Select Your Vehicle</h1>
-          <div className="space-y-6">
+          <div className="space-y-4">
             <SelectDropdown
               label="Make"
               options={makes}
@@ -294,7 +295,7 @@ export default function VehicleSelection() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 20 }}
                   transition={{ duration: 0.3 }}
-                  className="flex space-x-2"
+                  className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2"
                 >
                   <Button
                     onClick={handleContinue}
@@ -310,12 +311,14 @@ export default function VehicleSelection() {
                     onClick={handleSaveVehicle}
                     variant="outline"
                     disabled={isSaved || !selectedEngine}
+                    className="flex-1 sm:flex-none"
                   >
                     {isSaved ? (
-                      <Check className="w-4 h-4 text-green-500" />
+                      <Check className="w-4 h-4 text-green-500 mr-2" />
                     ) : (
-                      <Save className="w-4 h-4" />
+                      <Save className="w-4 h-4 mr-2" />
                     )}
+                    {isSaved ? 'Saved' : 'Save Vehicle'}
                   </Button>
                 </motion.div>
               )}

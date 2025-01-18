@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { FileSearch, Bot, ChevronRight, Plus, Settings, Car } from 'lucide-react'
+import { FileSearch, Bot, ChevronRight, Plus, Car } from 'lucide-react'
 import { useSavedVehicles } from '@context/VehicleContext'
 import { useTheme } from '@context/ThemeProvider'
 import { Button } from "@/components/ui/Button"
