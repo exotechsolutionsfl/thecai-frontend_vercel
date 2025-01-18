@@ -51,7 +51,7 @@ export default function Vessel({ children }: VesselProps) {
     e.preventDefault()
     setIsSubmitting(true)
     try {
-      const response = await apiFetch('api/submit-feedback', {
+      const response = await apiFetch('api/general-feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: feedbackType, content: feedback }),
