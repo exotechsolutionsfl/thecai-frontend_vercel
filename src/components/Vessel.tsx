@@ -7,7 +7,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronRight, X, Plus, MessageSquare, ChevronLeft, Moon, Sun, Menu } from 'lucide-react'
 import { useSavedVehicles } from '@context/VehicleContext'
 import { useTheme } from '@context/ThemeProvider'
-import { Toaster, toast } from 'react-hot-toast'
 import { apiFetch } from '@api/api'
 import { Button } from "@/components/ui/Button"
 import { Card, CardContent } from "@/components/ui/Card"
@@ -37,6 +36,9 @@ export default function Vessel({ children }: VesselProps) {
   const [feedbackType, setFeedbackType] = useState<string>('issue')
   const [feedback, setFeedback] = useState<string>('')
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
+  const [showResultModal, setShowResultModal] = useState(false)
+  const [resultMessage, setResultMessage] = useState('')
+  const [isSuccess, setIsSuccess] = useState(false)
   const router = useRouter()
   const { savedVehicles, setSavedVehicles } = useSavedVehicles()
   const { theme, toggleTheme } = useTheme()
@@ -58,18 +60,20 @@ export default function Vessel({ children }: VesselProps) {
       })
 
       if (response.message === 'Feedback submitted successfully') {
-        toast.success('Feedback submitted successfully!')
+        setResultMessage('Feedback submitted successfully!')
+        setIsSuccess(true)
         setFeedback('')
         setFeedbackType('issue')
-        setActiveSection('main')
       } else {
-        throw new Error('Failed to submit feedback')
+        throw new Error('Failed to submit feedback. Contact us.')
       }
     } catch (error) {
       console.error('Error submitting feedback:', error)
-      toast.error('Failed to submit feedback. Please try again.')
+      setResultMessage('Failed to submit feedback. Please try again or contact us.')
+      setIsSuccess(false)
     } finally {
       setIsSubmitting(false)
+      setShowResultModal(true)
     }
   }
 
@@ -120,7 +124,6 @@ export default function Vessel({ children }: VesselProps) {
   return (
     <div className="flex flex-col h-screen">
       <header className="flex-none bg-background shadow-md z-10 h-16">
-        <Toaster />
         <div className="p-4 flex items-center justify-between relative">
           <Link href="/" className="text-2xl font-bold hover:text-primary transition-colors duration-300">
             Thec<span className="glow-text">AI</span>
@@ -299,6 +302,29 @@ export default function Vessel({ children }: VesselProps) {
           </motion.div>
         )}
       </AnimatePresence>
+      {showResultModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+          <Card className="w-full max-w-md">
+            <CardContent className="pt-6">
+              <h3 className={`text-lg font-semibold mb-2 ${isSuccess ? 'text-green-500' : 'text-red-500'}`}>
+                {isSuccess ? 'Success' : 'Error'}
+              </h3>
+              <p className="mb-4">{resultMessage}</p>
+              <Button 
+                onClick={() => {
+                  setShowResultModal(false)
+                  if (isSuccess) {
+                    setActiveSection('main')
+                  }
+                }}
+                className="w-full"
+              >
+                Close
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }
