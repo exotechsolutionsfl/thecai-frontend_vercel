@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { FileSearch, Bot, ChevronRight, Plus, Car } from 'lucide-react'
+import { FileSearch, Bot, ChevronRight, Plus } from 'lucide-react'
 import { useSavedVehicles } from '@context/VehicleContext'
 import { useTheme } from '@context/ThemeProvider'
 import { Button } from "@/components/ui/Button"
@@ -19,14 +19,14 @@ interface QuickAction {
 const QuickActionButton = ({ title, description, icon: Icon, onClick }: QuickAction) => (
   <Button 
     variant="outline" 
-    className="w-full justify-start h-auto py-3 px-3 group hover:bg-accent/50"
+    className="w-full justify-start h-auto py-4 px-4 group hover:bg-accent/50"
     onClick={onClick}
   >
-    <div className="flex items-center">
-      <Icon className="h-5 w-5 mr-3 flex-shrink-0 group-hover:text-primary transition-colors" />
+    <div className="flex items-start">
+      <Icon className="h-5 w-5 mr-4 mt-0.5 flex-shrink-0 group-hover:text-primary transition-colors" />
       <div className="text-left">
         <div className="font-medium">{title}</div>
-        <div className="text-xs text-muted-foreground mt-1">
+        <div className="text-sm text-muted-foreground mt-1">
           {description}
         </div>
       </div>
@@ -48,21 +48,18 @@ const VehicleList = ({
       <Button
         key={index}
         variant="ghost"
-        className="w-full justify-between group hover:bg-accent/50 py-2"
+        className="w-full justify-between group hover:bg-accent/50"
         onClick={() => onSelect(vehicle)}
       >
-        <div className="flex items-center">
-          <Car className="h-4 w-4 mr-2 text-muted-foreground" />
-          <span className="truncate text-sm">
-            {vehicle.make} {vehicle.model} ({vehicle.year})
-          </span>
-        </div>
+        <span className="truncate">
+          {vehicle.make} {vehicle.model} ({vehicle.year})
+        </span>
         <ChevronRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-all" />
       </Button>
     ))}
     <Button
       variant="outline"
-      className="w-full justify-center group hover:bg-accent/50 py-2"
+      className="w-full justify-start group hover:bg-accent/50"
       onClick={onAdd}
     >
       <Plus className="mr-2 h-4 w-4 group-hover:text-primary transition-colors" />
@@ -73,11 +70,11 @@ const VehicleList = ({
 
 const EmptyVehicleState = ({ onClick }: { onClick: () => void }) => (
   <div className="text-center space-y-4">
-    <p className="text-sm text-muted-foreground">No vehicles saved yet</p>
+    <p className="text-muted-foreground">No vehicles saved yet</p>
     <Button 
       variant="outline"
       onClick={onClick} 
-      className="w-full group hover:bg-accent/50"
+      className="w-full sm:w-auto group hover:bg-accent/50"
     >
       <Plus className="mr-2 h-4 w-4 group-hover:text-primary transition-colors" />
       Add Your First Vehicle
@@ -125,17 +122,17 @@ export default function HomePage() {
   ]
 
   return (
-    <div className={`min-h-screen flex flex-col ${theme === 'dark' ? 'bg-black text-white' : 'bg-white text-black'}`}>
+    <div className={`h-full flex flex-col ${theme === 'dark' ? 'bg-black text-white' : 'bg-white text-black'}`}>
       <main className="flex-1 flex items-center justify-center p-4">
-        <div className="w-full max-w-md space-y-6">
+        <div className="w-full max-w-3xl space-y-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="space-y-6"
+            className="grid gap-6 md:grid-cols-2"
           >
             <Card>
-              <CardContent className="p-4 sm:p-6">
+              <CardContent className="p-6">
                 <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
                 <div className="space-y-3">
                   {quickActions.map((action, index) => (
@@ -146,7 +143,7 @@ export default function HomePage() {
             </Card>
 
             <Card>
-              <CardContent className="p-4 sm:p-6">
+              <CardContent className="p-6">
                 <h2 className="text-xl font-semibold mb-4">My Vehicles</h2>
                 {savedVehicles.length > 0 ? (
                   <VehicleList
