@@ -7,6 +7,8 @@ import { Card, CardContent } from "@/components/ui/Card"
 import Image from 'next/image'
 import { TreeBranch } from '@/components/TreeBranch'
 import Loading from '@/components/ui/loading'
+import { Loader2 } from 'lucide-react'
+
 
 interface MenuItem {
   uid: string;
@@ -19,6 +21,19 @@ interface MenuItem {
   }[];
 }
 
+interface TreeBranchProps {
+  children: React.ReactNode
+  level: number
+  isLastChild: boolean
+  isFolder: boolean
+  isExpanded: boolean
+  name: string
+  onClick: () => void
+  hasChildren: boolean
+  isLoading: boolean
+}
+
+
 export default function DynamicContent() {
   const searchParams = useSearchParams()
   const make = searchParams.get('make')
@@ -29,6 +44,7 @@ export default function DynamicContent() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({})
+  const [loadingItems, setLoadingItems] = useState<Record<string, boolean>>({})
 
   const fetchMenuData = useCallback(async (parentUid: string | null = null) => {
     setLoading(true)
@@ -82,7 +98,6 @@ export default function DynamicContent() {
     setExpandedMenus(prevExpandedMenus => {
       const newExpandedMenus = { ...prevExpandedMenus };
       if (newExpandedMenus[menuItem.uid]) {
-        // If closing, reset all child menu states
         const resetChildStates = (item: MenuItem) => {
           if (item.submenus) {
             item.submenus.forEach(subItem => {
@@ -98,7 +113,10 @@ export default function DynamicContent() {
     });
 
     if (!menuItem.submenus && !menuItem.content) {
-      fetchMenuData(menuItem.uid);
+      setLoadingItems(prev => ({ ...prev, [menuItem.uid]: true }));
+      fetchMenuData(menuItem.uid).then(() => {
+        setLoadingItems(prev => ({ ...prev, [menuItem.uid]: false }));
+      });
     }
   }, [fetchMenuData]);
 
@@ -122,6 +140,7 @@ export default function DynamicContent() {
         name={displayName}
         onClick={() => handleMenuClick(item)}
         hasChildren={hasSubmenus || (!!item.content && item.content.length > 0)}
+        isLoading={loadingItems[item.uid]}
       >
         {isExpanded && hasSubmenus && (
           <div className="ml-4 mt-2">
@@ -137,7 +156,7 @@ export default function DynamicContent() {
         {isExpanded && item.content && renderContent(item.content, displayName, item.uid)}
       </TreeBranch>
     )
-  }, [expandedMenus, handleMenuClick])
+  }, [expandedMenus, handleMenuClick, loadingItems])
 
   const renderContent = (content: { [key: string]: string }[], parentName: string, uid: string) => {
     return (
@@ -159,7 +178,7 @@ export default function DynamicContent() {
                     return (
                       <div key={uniqueKey} className="relative h-64 w-full mb-2">
                         <Image
-                          src={value}
+                          src={value || "/placeholder.svg"}
                           alt={`Content image ${contentIndex + 1}`}
                           fill
                           style={{ objectFit: 'contain' }}
@@ -180,7 +199,7 @@ export default function DynamicContent() {
   if (loading && menuData.length === 0) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <Loading message="Loading data..." />
+        <Loading message="Loading menu data..." />
       </div>
     )
   }

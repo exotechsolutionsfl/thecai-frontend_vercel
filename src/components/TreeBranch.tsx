@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { FolderOpen, FolderClosed, File } from 'lucide-react'
+import { FolderOpen, FolderClosed, File, Loader2 } from 'lucide-react'
 
 interface TreeBranchProps {
   children: React.ReactNode
@@ -11,6 +11,7 @@ interface TreeBranchProps {
   name: string
   onClick: () => void
   hasChildren: boolean
+  isLoading: boolean
 }
 
 export const TreeBranch: React.FC<TreeBranchProps> = ({
@@ -22,6 +23,7 @@ export const TreeBranch: React.FC<TreeBranchProps> = ({
   name,
   onClick,
   hasChildren,
+  isLoading,
 }) => {
   return (
     <div className="relative pl-5">
@@ -78,6 +80,9 @@ export const TreeBranch: React.FC<TreeBranchProps> = ({
             <span className={isExpanded ? 'font-medium text-primary' : ''}>
               {name}
             </span>
+            {isLoading && (
+              <Loader2 className="h-4 w-4 ml-2 animate-spin text-primary" />
+            )}
           </div>
         </div>
 
@@ -98,4 +103,3 @@ export const TreeBranch: React.FC<TreeBranchProps> = ({
     </div>
   )
 }
-
