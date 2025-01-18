@@ -3,17 +3,24 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { FileSearch, Bot, ChevronRight, Plus } from 'lucide-react'
+import { FileSearch, Bot, ChevronRight, Plus, Settings } from 'lucide-react'
 import { useSavedVehicles } from '@context/VehicleContext'
 import { useTheme } from '@context/ThemeProvider'
 import { Button } from "@/components/ui/Button"
 import { Card, CardContent } from "@/components/ui/Card"
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 
 interface QuickAction {
   title: string
   description: string
   icon: React.ElementType
   onClick: () => void
+}
+
+interface Vehicle {
+  make: string
+  model: string
+  year: string
 }
 
 const QuickActionButton = ({ title, description, icon: Icon, onClick }: QuickAction) => (
@@ -82,17 +89,12 @@ const EmptyVehicleState = ({ onClick }: { onClick: () => void }) => (
   </div>
 )
 
-interface Vehicle {
-  make: string
-  model: string
-  year: string
-}
-
 export default function HomePage() {
   const [mounted, setMounted] = useState(false)
   const { savedVehicles } = useSavedVehicles()
   const router = useRouter()
   const { theme } = useTheme()
+  const isMobile = useMediaQuery('(max-width: 640px)')
 
   useEffect(() => {
     setMounted(true)
@@ -122,14 +124,20 @@ export default function HomePage() {
   ]
 
   return (
-    <div className={`h-full flex flex-col ${theme === 'dark' ? 'bg-black text-white' : 'bg-white text-black'}`}>
+    <div className={`min-h-screen flex flex-col ${theme === 'dark' ? 'bg-black text-white' : 'bg-white text-black'}`}>
+      <header className="p-4 flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Thec<span className="text-primary">AI</span></h1>
+        <Button variant="ghost" size="icon" onClick={() => router.push('/settings')} aria-label="Settings">
+          <Settings className="h-6 w-6" />
+        </Button>
+      </header>
       <main className="flex-1 flex items-center justify-center p-4">
-        <div className="w-full max-w-3xl space-y-8">
+        <div className="w-full max-w-3xl space-y-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="grid gap-6 md:grid-cols-2"
+            className={`grid gap-6 ${isMobile ? 'grid-cols-1' : 'md:grid-cols-2'}`}
           >
             <Card>
               <CardContent className="p-6">
@@ -159,7 +167,7 @@ export default function HomePage() {
           </motion.div>
         </div>
       </main>
-      <footer className="py-2 text-center text-xs text-muted-foreground">
+      <footer className="py-4 text-center text-xs text-muted-foreground">
         © {new Date().getFullYear()} ThecAI. All rights reserved.
       </footer>
     </div>
