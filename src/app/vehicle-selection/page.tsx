@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { Loader2, Save, Check } from 'lucide-react'
@@ -8,49 +8,15 @@ import { apiFetch } from '@api/api'
 import { useSavedVehicles } from '@context/VehicleContext'
 import { Button } from "@/components/ui/Button"
 import { Card, CardContent } from "@/components/ui/Card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select"
-import { Label } from "@/components/ui/label"
+import { SelectDropdown } from "@/components/SelectDropdown"
+import { useToast } from "@/hooks/useToast"
+import { ErrorBoundary } from "@/components/ErrorBoundary"
 
-interface SelectDropdownProps {
-  label: string
-  options: string[]
-  value: string
-  onChange: (value: string) => void
-  loading: boolean
-  disabled?: boolean
-}
-
-function SelectDropdown({ label, options, value, onChange, loading, disabled }: SelectDropdownProps) {
-  return (
-    <div className="space-y-2 relative">
-      <Label htmlFor={label}>{label}</Label>
-      <div className="relative">
-        <Select value={value} onValueChange={onChange} disabled={disabled || loading || options.length === 0}>
-          <SelectTrigger id={label} className={loading ? 'opacity-50' : ''}>
-            <SelectValue placeholder={`Select ${label}`} />
-          </SelectTrigger>
-          <SelectContent className="max-h-[300px] overflow-y-auto">
-            {options.length > 0 ? (
-              options.map((option) => (
-                <SelectItem key={option} value={option}>
-                  {option}
-                </SelectItem>
-              ))
-            ) : (
-              <SelectItem value="_empty" disabled>
-                No {label} available
-              </SelectItem>
-            )}
-          </SelectContent>
-        </Select>
-        {loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-background/50">
-            <Loader2 className="h-5 w-5 animate-spin text-primary" />
-          </div>
-        )}
-      </div>
-    </div>
-  )
+interface Vehicle {
+  make: string
+  model: string
+  year: string
+  engine: string
 }
 
 export default function VehicleSelection() {
@@ -58,10 +24,7 @@ export default function VehicleSelection() {
   const [models, setModels] = useState<string[]>([])
   const [years, setYears] = useState<string[]>([])
   const [engines, setEngines] = useState<string[]>([])
-  const [selectedMake, setSelectedMake] = useState('')
-  const [selectedModel, setSelectedModel] = useState('')
-  const [selectedYear, setSelectedYear] = useState('')
-  const [selectedEngine, setSelectedEngine] = useState('')
+  const [selectedVehicle, setSelectedVehicle] = useState<Partial<Vehicle>>({})
   const [loading, setLoading] = useState({
     page: true,
     makes: true,
@@ -74,132 +37,138 @@ export default function VehicleSelection() {
 
   const router = useRouter()
   const { savedVehicles, setSavedVehicles } = useSavedVehicles()
+  const { toast } = useToast()
 
-  useEffect(() => {
-    fetchMakes()
-  }, [])
+  const fetchData = useCallback(async (endpoint: string, params: Record<string, string> = {}) => {
+    const queryString = new URLSearchParams(params).toString()
+    const url = `${endpoint}${queryString ? `?${queryString}` : ''}`
+    try {
+      const data = await apiFetch(url)
+      return data
+    } catch (error) {
+      console.error(`Error fetching data from ${url}:`, error)
+      toast({
+        title: "Error",
+        description: `Failed to fetch ${endpoint.split('/').pop()}. Please try again.`,
+        variant: "destructive",
+      })
+      throw error
+    }
+  }, [toast])
 
-  const fetchMakes = async () => {
+  const fetchMakes = useCallback(async () => {
     setLoading(prev => ({ ...prev, makes: true }))
     try {
-      const data = await apiFetch('api/vehicle-makes')
+      const data = await fetchData('api/vehicle-makes')
       setMakes(data.makes || [])
-    } catch (error) {
-      console.error("Error fetching makes:", error)
     } finally {
       setLoading(prev => ({ ...prev, makes: false, page: false }))
     }
-  }
+  }, [fetchData])
 
-  const fetchModels = async (make: string) => {
+  const fetchModels = useCallback(async (make: string) => {
     setLoading(prev => ({ ...prev, models: true }))
     try {
-      const data = await apiFetch(`api/vehicle-models?make=${encodeURIComponent(make)}`)
-      setModels(data.models)
-    } catch (error) {
-      console.error(`Error fetching models for ${make}:`, error)
+      const data = await fetchData('api/vehicle-models', { make })
+      setModels(data.models || [])
     } finally {
       setLoading(prev => ({ ...prev, models: false }))
     }
-  }
+  }, [fetchData])
 
-  const fetchYears = async (make: string, model: string) => {
+  const fetchYears = useCallback(async (make: string, model: string) => {
     setLoading(prev => ({ ...prev, years: true }))
     try {
-      const data = await apiFetch(`api/vehicle-years?make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}`)
-      setYears(data.years.map(String))
-    } catch (error) {
-      console.error(`Error fetching years for ${make} ${model}:`, error)
+      const data = await fetchData('api/vehicle-years', { make, model })
+      setYears(data.years.map(String) || [])
     } finally {
       setLoading(prev => ({ ...prev, years: false }))
     }
-  }
+  }, [fetchData])
 
-  const fetchEngines = async (make: string, model: string, year: string) => {
+  const fetchEngines = useCallback(async (make: string, model: string, year: string) => {
     setLoading(prev => ({ ...prev, engines: true }))
     try {
-      const data = await apiFetch(`api/vehicle-engine?make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}&year=${encodeURIComponent(year)}`)
+      const data = await fetchData('api/vehicle-engine', { make, model, year })
       const engineOptions = data.engine ? [data.engine] : []
       setEngines(engineOptions)
       if (engineOptions.length === 1) {
-        setSelectedEngine(engineOptions[0])
+        setSelectedVehicle(prev => ({ ...prev, engine: engineOptions[0] }))
       }
-    } catch (error) {
-      console.error(`Error fetching engines for ${make} ${model} ${year}:`, error)
-      setEngines([])
     } finally {
       setLoading(prev => ({ ...prev, engines: false }))
     }
-  }
+  }, [fetchData])
 
-  const handleMakeChange = (make: string) => {
-    setSelectedMake(make)
-    setSelectedModel('')
-    setSelectedYear('')
-    setSelectedEngine('')
+  useEffect(() => {
+    fetchMakes()
+  }, [fetchMakes])
+
+  const handleSelectionChange = useCallback((key: keyof Vehicle, value: string) => {
+    setSelectedVehicle(prev => {
+      const updated = { ...prev, [key]: value }
+      if (key === 'make') {
+        delete updated.model
+        delete updated.year
+        delete updated.engine
+        fetchModels(value)
+      } else if (key === 'model') {
+        delete updated.year
+        delete updated.engine
+        fetchYears(updated.make!, value)
+      } else if (key === 'year') {
+        delete updated.engine
+        fetchEngines(updated.make!, updated.model!, value)
+      }
+      return updated
+    })
     setIsSaved(false)
-    if (make) {
-      fetchModels(make)
-    } else {
-      setModels([])
-    }
-  }
+  }, [fetchModels, fetchYears, fetchEngines])
 
-  const handleModelChange = (model: string) => {
-    setSelectedModel(model)
-    setSelectedYear('')
-    setSelectedEngine('')
-    setIsSaved(false)
-    if (selectedMake && model) {
-      fetchYears(selectedMake, model)
-    } else {
-      setYears([])
-    }
-  }
-
-  const handleYearChange = (year: string) => {
-    setSelectedYear(year)
-    setSelectedEngine('')
-    setIsSaved(false)
-    if (selectedMake && selectedModel && year) {
-      fetchEngines(selectedMake, selectedModel, year)
-    } else {
-      setEngines([])
-    }
-  }
-
-  const handleEngineChange = (engine: string) => {
-    setSelectedEngine(engine)
-    setIsSaved(false)
-  }
-
-  const handleContinue = async () => {
-    if (selectedMake && selectedModel && selectedYear && selectedEngine) {
+  const handleContinue = useCallback(async () => {
+    if (selectedVehicle.make && selectedVehicle.model && selectedVehicle.year && selectedVehicle.engine) {
       setLoading(prev => ({ ...prev, vehicleType: true }))
       try {
-        const url = `/dynamic-content?make=${encodeURIComponent(selectedMake)}&model=${encodeURIComponent(selectedModel)}&year=${encodeURIComponent(selectedYear)}&engine=${encodeURIComponent(selectedEngine)}`;
+        const url = `/dynamic-content?${new URLSearchParams(selectedVehicle as Record<string, string>).toString()}`;
         router.push(url);
       } catch (error) {
-        console.error("Error checking vehicle type:", error)
-        alert("An error occurred. Please try again.")
+        console.error("Error navigating to dynamic content:", error)
+        toast({
+          title: "Error",
+          description: "An error occurred. Please try again.",
+          variant: "destructive",
+        })
       } finally {
         setLoading(prev => ({ ...prev, vehicleType: false }))
       }
     } else {
-      alert("Please select make, model, year, and engine.")
+      toast({
+        title: "Incomplete Selection",
+        description: "Please select make, model, year, and engine.",
+        variant: "warning",
+      })
     }
-  }
+  }, [selectedVehicle, router, toast])
 
-  const handleSaveVehicle = () => {
-    if (selectedMake && selectedModel && selectedYear && selectedEngine) {
-      const newVehicle = { make: selectedMake, model: selectedModel, year: selectedYear, engine: selectedEngine }
+  const handleSaveVehicle = useCallback(() => {
+    if (selectedVehicle.make && selectedVehicle.model && selectedVehicle.year && selectedVehicle.engine) {
+      const newVehicle = selectedVehicle as Vehicle
       const updatedVehicles = [...savedVehicles, newVehicle]
       setSavedVehicles(updatedVehicles)
       setIsSaved(true)
+      toast({
+        title: "Vehicle Saved",
+        description: "Your vehicle has been saved successfully.",
+        variant: "success",
+      })
     } else {
-      alert('Please select make, model, year, and engine before saving.')
+      toast({
+        title: "Incomplete Selection",
+        description: "Please select make, model, year, and engine before saving.",
+        variant: "warning",
+      })
     }
-  }
+  }, [selectedVehicle, savedVehicles, setSavedVehicles, toast])
 
   if (loading.page) {
     return (
@@ -210,119 +179,121 @@ export default function VehicleSelection() {
   }
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardContent className="pt-6">
-          <h1 className="text-2xl font-bold mb-6 text-center">Select Your Vehicle</h1>
-          <div className="space-y-6">
-            <SelectDropdown
-              label="Make"
-              options={makes}
-              value={selectedMake}
-              onChange={handleMakeChange}
-              loading={loading.makes}
-            />
+    <ErrorBoundary>
+      <div className="fixed inset-0 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6">
+            <h1 className="text-2xl font-bold mb-6 text-center">Select Your Vehicle</h1>
+            <div className="space-y-6">
+              <SelectDropdown
+                label="Make"
+                options={makes}
+                value={selectedVehicle.make || ''}
+                onChange={(value) => handleSelectionChange('make', value)}
+                loading={loading.makes}
+              />
 
-            <AnimatePresence mode="wait">
-              {selectedMake && (
-                <motion.div
-                  key="model"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <SelectDropdown
-                    label="Model"
-                    options={models}
-                    value={selectedModel}
-                    onChange={handleModelChange}
-                    loading={loading.models}
-                    disabled={!selectedMake}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <AnimatePresence mode="wait">
-              {selectedModel && (
-                <motion.div
-                  key="year"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <SelectDropdown
-                    label="Year"
-                    options={years}
-                    value={selectedYear}
-                    onChange={handleYearChange}
-                    loading={loading.years}
-                    disabled={!selectedModel}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <AnimatePresence mode="wait">
-              {selectedYear && (
-                <motion.div
-                  key="engine"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <SelectDropdown
-                    label="Engine"
-                    options={engines}
-                    value={selectedEngine}
-                    onChange={handleEngineChange}
-                    loading={loading.engines}
-                    disabled={!selectedYear}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <AnimatePresence mode="wait">
-              {selectedEngine && (
-                <motion.div
-                  key="buttons"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 20 }}
-                  transition={{ duration: 0.3 }}
-                  className="flex space-x-2"
-                >
-                  <Button
-                    onClick={handleContinue}
-                    className="flex-1"
-                    disabled={loading.vehicleType || !selectedEngine}
+              <AnimatePresence mode="wait">
+                {selectedVehicle.make && (
+                  <motion.div
+                    key="model"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.3 }}
                   >
-                    {loading.vehicleType ? (
-                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    ) : null}
-                    Continue
-                  </Button>
-                  <Button
-                    onClick={handleSaveVehicle}
-                    variant="outline"
-                    disabled={isSaved || !selectedEngine}
+                    <SelectDropdown
+                      label="Model"
+                      options={models}
+                      value={selectedVehicle.model || ''}
+                      onChange={(value) => handleSelectionChange('model', value)}
+                      loading={loading.models}
+                      disabled={!selectedVehicle.make}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <AnimatePresence mode="wait">
+                {selectedVehicle.model && (
+                  <motion.div
+                    key="year"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.3 }}
                   >
-                    {isSaved ? (
-                      <Check className="w-4 h-4 text-green-500" />
-                    ) : (
-                      <Save className="w-4 h-4" />
-                    )}
-                  </Button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+                    <SelectDropdown
+                      label="Year"
+                      options={years}
+                      value={selectedVehicle.year || ''}
+                      onChange={(value) => handleSelectionChange('year', value)}
+                      loading={loading.years}
+                      disabled={!selectedVehicle.model}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <AnimatePresence mode="wait">
+                {selectedVehicle.year && (
+                  <motion.div
+                    key="engine"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <SelectDropdown
+                      label="Engine"
+                      options={engines}
+                      value={selectedVehicle.engine || ''}
+                      onChange={(value) => handleSelectionChange('engine', value)}
+                      loading={loading.engines}
+                      disabled={!selectedVehicle.year}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <AnimatePresence mode="wait">
+                {selectedVehicle.engine && (
+                  <motion.div
+                    key="buttons"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 20 }}
+                    transition={{ duration: 0.3 }}
+                    className="flex space-x-2"
+                  >
+                    <Button
+                      onClick={handleContinue}
+                      className="flex-1"
+                      disabled={loading.vehicleType || !selectedVehicle.engine}
+                    >
+                      {loading.vehicleType ? (
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      ) : null}
+                      Continue
+                    </Button>
+                    <Button
+                      onClick={handleSaveVehicle}
+                      variant="outline"
+                      disabled={isSaved || !selectedVehicle.engine}
+                    >
+                      {isSaved ? (
+                        <Check className="w-4 h-4 text-green-500" />
+                      ) : (
+                        <Save className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </ErrorBoundary>
   )
 }

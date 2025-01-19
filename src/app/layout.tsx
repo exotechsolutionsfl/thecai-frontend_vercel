@@ -4,11 +4,14 @@ import { ThemeProvider } from '@context/ThemeProvider'
 import { VehicleProvider } from '@context/VehicleContext'
 import Script from 'next/script'
 import Vessel from '@components/Vessel'
+import dynamic from 'next/dynamic'
 import { metadata } from './metadata'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export { metadata }
+
+const ToasterProvider = dynamic(() => import('@/components/ui/Toaster').then((mod) => mod.ToasterProvider), { ssr: false })
 
 export default function RootLayout({
   children,
@@ -36,6 +39,7 @@ export default function RootLayout({
               </div>
             </Vessel>
           </VehicleProvider>
+          {typeof window !== 'undefined' && <ToasterProvider />}
         </ThemeProvider>
       </body>
     </html>
