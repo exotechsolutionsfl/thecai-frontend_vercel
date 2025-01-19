@@ -4,11 +4,13 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { apiFetch } from '@api/api'
 import { Card, CardContent } from "@/components/ui/Card"
-import Image from 'next/image'
 import { TreeBranch } from '@/components/TreeBranch'
 import Loading from '@/components/ui/loading'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { useToast } from '@/hooks/useToast'
+import ImageRenderer from '@/components/ImageRenderer'
+import { X } from 'lucide-react'
+import Image from 'next/image'
 
 interface MenuItem {
   uid: string;
@@ -32,6 +34,7 @@ export default function DynamicContent() {
   const [error, setError] = useState<string | null>(null)
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({})
   const [loadingItems, setLoadingItems] = useState<Record<string, boolean>>({})
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const { toast } = useToast()
 
   const fetchMenuData = useCallback(async (parentUid: string | null = null) => {
@@ -86,6 +89,47 @@ export default function DynamicContent() {
       }
       return updateRecursive(prevData)
     })
+  }
+
+  const handleImageClick = (imageUrl: string) => {
+    setSelectedImage(imageUrl)
+  }
+
+  const renderContent = (content: { [key: string]: string }[], parentName: string, uid: string) => {
+    return (
+      <Card className="mt-4 mb-4 ml-4">
+        <CardContent className="p-4">
+          <h3 className="text-lg font-semibold mb-2">{parentName}</h3>
+          {content.map((item, contentIndex) => {
+            const contentItemKey = `${uid}-content-item-${contentIndex}`
+            return (
+              <div key={contentItemKey} className="mb-4">
+                {Object.entries(item).map(([key, value]) => {
+                  const uniqueKey = `${uid}-${contentIndex}-${key}`
+                  
+                  if (key.match(/^text_\d+_enhanced$/)) {
+                    return <p key={uniqueKey} className="mb-2">{value}</p>
+                  } else if (key.match(/^text_\d+$/) && !item[`${key}_enhanced`]) {
+                    return <p key={uniqueKey} className="mb-2">{value}</p>
+                  } else if (key.match(/^image_\d+_url$/)) {
+                    return (
+                      <ImageRenderer
+                        key={uniqueKey}
+                        imageUrl={value}
+                        pageNumber={contentIndex + 1}
+                        imageIndex={parseInt(key.match(/\d+/)?.[0] || '0')}
+                        onImageClick={handleImageClick}
+                      />
+                    )
+                  }
+                  return null
+                })}
+              </div>
+            )
+          })}
+        </CardContent>
+      </Card>
+    )
   }
 
   const handleMenuClick = useCallback((menuItem: MenuItem) => {
@@ -150,50 +194,12 @@ export default function DynamicContent() {
         {isExpanded && item.content && renderContent(item.content, displayName, item.uid)}
       </TreeBranch>
     )
-  }, [expandedMenus, handleMenuClick, loadingItems])
-
-  const renderContent = (content: { [key: string]: string }[], parentName: string, uid: string) => {
-    return (
-      <Card className="mt-4 mb-4 ml-4">
-        <CardContent className="p-4">
-          <h3 className="text-lg font-semibold mb-2">{parentName}</h3>
-          {content.map((item, contentIndex) => {
-            const contentItemKey = `${uid}-content-item-${contentIndex}`
-            return (
-              <div key={contentItemKey} className="mb-4">
-                {Object.entries(item).map(([key, value]) => {
-                  const uniqueKey = `${uid}-${contentIndex}-${key}`
-                  
-                  if (key.match(/^text_\d+_enhanced$/)) {
-                    return <p key={uniqueKey} className="mb-2">{value}</p>
-                  } else if (key.match(/^text_\d+$/) && !item[`${key}_enhanced`]) {
-                    return <p key={uniqueKey} className="mb-2">{value}</p>
-                  } else if (key.match(/^image_\d+_url$/)) {
-                    return (
-                      <div key={uniqueKey} className="relative h-64 w-full mb-2">
-                        <Image
-                          src={value || "/placeholder.svg"}
-                          alt={`Content image ${contentIndex + 1}`}
-                          fill
-                          style={{ objectFit: 'contain' }}
-                        />
-                      </div>
-                    )
-                  }
-                  return null
-                })}
-              </div>
-            )
-          })}
-        </CardContent>
-      </Card>
-    )
-  }
+  }, [expandedMenus, handleMenuClick, loadingItems, renderContent, setLoadingItems]);
 
   if (loading && menuData.length === 0) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <Loading message="Loading data..." />
+        <Loading message="Loading menu data..." />
       </div>
     )
   }
@@ -217,6 +223,28 @@ export default function DynamicContent() {
           </div>
         </div>
       </div>
+      {selectedImage && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setSelectedImage(null)}>
+          <div className="relative max-w-4xl max-h-[90vh] overflow-auto bg-white dark:bg-gray-800 p-4 rounded-lg" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="absolute top-2 right-2 p-1 rounded-full bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              onClick={() => setSelectedImage(null)}
+              aria-label="Close image"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <Image 
+              src={selectedImage || "/placeholder.svg"} 
+              alt="Selected" 
+              className="max-w-full h-auto" 
+              width={1000} 
+              height={1000} 
+              layout="responsive"
+              objectFit="contain"
+            />
+          </div>
+        </div>
+      )}
     </ErrorBoundary>
   )
 }
