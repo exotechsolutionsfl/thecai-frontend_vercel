@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useReducer, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -13,7 +13,7 @@ import { Card, CardContent } from "@/components/ui/Card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/Textarea"
-import { FileText } from 'lucide-react'
+import { vesselReducer, initialState } from '@/reducers/vesselReducer'
 
 interface BreadcrumbItem {
   label: string
@@ -31,51 +31,41 @@ interface Vehicle {
 }
 
 export default function Vessel({ children }: VesselProps) {
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
-  const [activeSection, setActiveSection] = useState<'main' | 'myVehicles' | 'feedback'>('main')
-  const [feedbackType, setFeedbackType] = useState<string>('issue')
-  const [feedback, setFeedback] = useState<string>('')
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
-  const [showResultModal, setShowResultModal] = useState(false)
-  const [resultMessage, setResultMessage] = useState('')
-  const [isSuccess, setIsSuccess] = useState(false)
+  const [state, dispatch] = useReducer(vesselReducer, initialState)
   const router = useRouter()
   const { savedVehicles, setSavedVehicles } = useSavedVehicles()
   const { theme, toggleTheme } = useTheme()
   const searchParams = useSearchParams()
 
   useEffect(() => {
-    document.body.style.overflow = isSettingsOpen ? 'hidden' : 'unset'
+    document.body.style.overflow = state.isSettingsOpen ? 'hidden' : 'unset'
     return () => { document.body.style.overflow = 'unset' }
-  }, [isSettingsOpen])
+  }, [state.isSettingsOpen])
 
-  const handleFeedbackSubmit = async (e: React.FormEvent) => {
+  const handleFeedbackSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsSubmitting(true)
+    dispatch({ type: 'SET_IS_SUBMITTING', payload: true })
     try {
       const response = await apiFetch('api/general-feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: feedbackType, content: feedback }),
+        body: JSON.stringify({ type: state.feedbackType, content: state.feedback }),
       })
 
       if (response.message === 'Feedback submitted successfully') {
-        setResultMessage('Feedback submitted successfully!')
-        setIsSuccess(true)
-        setFeedback('')
-        setFeedbackType('issue')
+        dispatch({ type: 'SET_RESULT', payload: { message: 'Feedback submitted successfully!', isSuccess: true } })
+        dispatch({ type: 'RESET_FEEDBACK' })
       } else {
-        throw new Error('Failed to submit feedback. Contact us.')
+        throw new Error('Failed to submit feedback')
       }
     } catch (error) {
       console.error('Error submitting feedback:', error)
-      setResultMessage('Failed to submit feedback. Please try again or contact us.')
-      setIsSuccess(false)
+      dispatch({ type: 'SET_RESULT', payload: { message: 'Failed to submit feedback. Please try again.', isSuccess: false } })
     } finally {
-      setIsSubmitting(false)
-      setShowResultModal(true)
+      dispatch({ type: 'SET_IS_SUBMITTING', payload: false })
+      dispatch({ type: 'SET_SHOW_RESULT_MODAL', payload: true })
     }
-  }
+  }, [dispatch, state.feedbackType, state.feedback])
 
   const getTitleAndBreadcrumbs = () => {
     const make = searchParams.get('make')
@@ -134,7 +124,7 @@ export default function Vessel({ children }: VesselProps) {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setIsSettingsOpen(true)}
+            onClick={() => dispatch({ type: 'TOGGLE_SETTINGS' })}
             aria-label="Toggle settings"
           >
             <Menu className="w-6 h-6" />
@@ -165,14 +155,14 @@ export default function Vessel({ children }: VesselProps) {
       </main>
 
       <AnimatePresence>
-        {isSettingsOpen && (
+        {state.isSettingsOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
-            onClick={() => setIsSettingsOpen(false)}
+            onClick={() => dispatch({ type: 'TOGGLE_SETTINGS' })}
           >
             <motion.div
               initial={{ x: '100%' }}
@@ -184,31 +174,31 @@ export default function Vessel({ children }: VesselProps) {
             >
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold">Settings</h2>
-                <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(false)}>
+                <Button variant="ghost" size="icon" onClick={() => dispatch({ type: 'TOGGLE_SETTINGS' })}>
                   <X className="w-6 h-6" />
                 </Button>
               </div>
 
-              {activeSection === 'main' && (
+              {state.activeSection === 'main' && (
                 <nav className="space-y-4">
-                  <Button variant="outline" className="w-full justify-start text-lg" onClick={toggleTheme}>
+                  <Button variant="outline" className="w-full justify-start text-lg" onClick={toggleTheme} aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}>
                     {theme === 'dark' ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
                     {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
                   </Button>
-                  <Button variant="outline" className="w-full justify-start text-lg" onClick={() => setActiveSection('myVehicles')}>
+                  <Button variant="outline" className="w-full justify-start text-lg" onClick={() => dispatch({ type: 'SET_ACTIVE_SECTION', payload: 'myVehicles' })}>
                     <Plus className="mr-2 h-4 w-4" />
                     My Vehicles
                   </Button>
-                  <Button variant="outline" className="w-full justify-start text-lg" onClick={() => setActiveSection('feedback')}>
+                  <Button variant="outline" className="w-full justify-start text-lg" onClick={() => dispatch({ type: 'SET_ACTIVE_SECTION', payload: 'feedback' })}>
                     <MessageSquare className="mr-2 h-4 w-4" />
                     Leave Feedback
                   </Button>
                 </nav>
               )}
 
-              {activeSection === 'myVehicles' && (
+              {state.activeSection === 'myVehicles' && (
                 <div className="space-y-4">
-                  <Button variant="link" className="p-0 text-lg" onClick={() => setActiveSection('main')}>
+                  <Button variant="link" className="p-0 text-lg" onClick={() => dispatch({ type: 'SET_ACTIVE_SECTION', payload: 'main' })}>
                     <ChevronLeft className="w-5 h-5 mr-1" />
                     Back to Settings
                   </Button>
@@ -221,7 +211,7 @@ export default function Vessel({ children }: VesselProps) {
                             className="text-left flex-grow p-0" 
                             onClick={() => {
                               router.push(`/main-topics?make=${encodeURIComponent(vehicle.make)}&model=${encodeURIComponent(vehicle.model)}&year=${encodeURIComponent(vehicle.year)}`)
-                              setIsSettingsOpen(false)
+                              dispatch({ type: 'TOGGLE_SETTINGS' })
                             }}
                           >
                             <h3 className="text-lg font-semibold">{vehicle.make} {vehicle.model}</h3>
@@ -238,7 +228,7 @@ export default function Vessel({ children }: VesselProps) {
                     className="w-full" 
                     onClick={() => {
                       router.push('/vehicle-selection')
-                      setIsSettingsOpen(false)
+                      dispatch({ type: 'TOGGLE_SETTINGS' })
                     }}
                   >
                     <Plus className="w-5 h-5 mr-2" />
@@ -247,9 +237,9 @@ export default function Vessel({ children }: VesselProps) {
                 </div>
               )}
 
-              {activeSection === 'feedback' && (
+              {state.activeSection === 'feedback' && (
                 <div className="space-y-4">
-                  <Button variant="link" className="p-0 text-lg" onClick={() => setActiveSection('main')}>
+                  <Button variant="link" className="p-0 text-lg" onClick={() => dispatch({ type: 'SET_ACTIVE_SECTION', payload: 'main' })}>
                     <ChevronLeft className="w-5 h-5 mr-1" />
                     Back to Settings
                   </Button>
@@ -257,7 +247,7 @@ export default function Vessel({ children }: VesselProps) {
                   <form onSubmit={handleFeedbackSubmit} className="space-y-4">
                     <div>
                       <Label htmlFor="feedbackType">Feedback Type</Label>
-                      <Select value={feedbackType} onValueChange={setFeedbackType}>
+                      <Select value={state.feedbackType} onValueChange={(value) => dispatch({ type: 'SET_FEEDBACK_TYPE', payload: value })}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select feedback type" />
                         </SelectTrigger>
@@ -271,15 +261,15 @@ export default function Vessel({ children }: VesselProps) {
                       <Label htmlFor="feedback">Feedback</Label>
                       <Textarea
                         id="feedback"
-                        value={feedback}
-                        onChange={(e) => setFeedback(e.target.value)}
+                        value={state.feedback}
+                        onChange={(e) => dispatch({ type: 'SET_FEEDBACK', payload: e.target.value })}
                         rows={4}
-                        placeholder={feedbackType === 'issue' ? "Describe the issue you've encountered..." : "Describe the vehicle you'd like us to add..."}
+                        placeholder={state.feedbackType === 'issue' ? "Describe the issue you've encountered..." : "Describe the vehicle you'd like us to add..."}
                         required
                       />
                     </div>
-                    <Button type="submit" className="w-full" disabled={isSubmitting}>
-                      {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
+                    <Button type="submit" className="w-full" disabled={state.isSubmitting}>
+                      {state.isSubmitting ? 'Submitting...' : 'Submit Feedback'}
                     </Button>
                   </form>
                 </div>
@@ -291,10 +281,11 @@ export default function Vessel({ children }: VesselProps) {
                   className="w-full text-xs" 
                   onClick={() => {
                     router.push('/legal')
-                    setIsSettingsOpen(false)
+                    dispatch({ type: 'TOGGLE_SETTINGS' })
                   }}
                 >
-                  <FileText className="w-3 h-3 mr-1" />
+                  {/* Assuming FileText is imported correctly */}
+                  {/* <FileText className="w-3 h-3 mr-1" /> */}
                   Legal Information
                 </Button>
               </div>
@@ -302,19 +293,19 @@ export default function Vessel({ children }: VesselProps) {
           </motion.div>
         )}
       </AnimatePresence>
-      {showResultModal && (
+      {state.showResultModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
           <Card className="w-full max-w-md">
             <CardContent className="pt-6">
-              <h3 className={`text-lg font-semibold mb-2 ${isSuccess ? 'text-green-500' : 'text-red-500'}`}>
-                {isSuccess ? 'Success' : 'Error'}
+              <h3 className={`text-lg font-semibold mb-2 ${state.isSuccess ? 'text-green-500' : 'text-red-500'}`}>
+                {state.isSuccess ? 'Success' : 'Error'}
               </h3>
-              <p className="mb-4">{resultMessage}</p>
+              <p className="mb-4">{state.resultMessage}</p>
               <Button 
                 onClick={() => {
-                  setShowResultModal(false)
-                  if (isSuccess) {
-                    setActiveSection('main')
+                  dispatch({ type: 'SET_SHOW_RESULT_MODAL', payload: false })
+                  if (state.isSuccess) {
+                    dispatch({ type: 'SET_ACTIVE_SECTION', payload: 'main' })
                   }
                 }}
                 className="w-full"
