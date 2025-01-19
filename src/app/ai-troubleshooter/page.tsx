@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useReducer, useCallback, useEffect, Suspense, useState } from 'react'
+import React, { useReducer, useCallback, useEffect, Suspense } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { initialState, reducer } from './state'
 import { Card, CardContent } from "@/components/ui/Card"
@@ -20,7 +20,6 @@ export default function AITroubleshooter() {
     return initial
   })
 
-  const [isLoading, setIsLoading] = useState(true)
 
   const { toast } = useToast()
 
@@ -70,7 +69,7 @@ export default function AITroubleshooter() {
                     </CardContent>
                   </Card>
                 }>
-                  <VehicleSelection state={state} dispatch={dispatch} onConfirm={handleConfirm} isLoading={isLoading} setIsLoading={setIsLoading} />
+                  <VehicleSelection state={state} dispatch={dispatch} onConfirm={handleConfirm} />
                 </Suspense>
               </motion.div>
             ) : (
