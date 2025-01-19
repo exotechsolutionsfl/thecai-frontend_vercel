@@ -1,86 +1,17 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { FileSearch, Bot, ChevronRight, Plus } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { FileSearch, Bot } from 'lucide-react'
 import { useSavedVehicles } from '@context/VehicleContext'
 import { useTheme } from '@context/ThemeProvider'
-import { Button } from "@/components/ui/Button"
 import { Card, CardContent } from "@/components/ui/Card"
+import dynamic from 'next/dynamic'
 
-interface QuickAction {
-  title: string
-  description: string
-  icon: React.ElementType
-  onClick: () => void
-}
-
-const QuickActionButton = ({ title, description, icon: Icon, onClick }: QuickAction) => (
-  <Button 
-    variant="outline" 
-    className="w-full justify-start h-auto py-4 px-4 group hover:bg-accent/50"
-    onClick={onClick}
-  >
-    <div className="flex items-start">
-      <Icon className="h-5 w-5 mr-4 mt-0.5 flex-shrink-0 group-hover:text-primary transition-colors" />
-      <div className="text-left">
-        <div className="font-medium">{title}</div>
-        <div className="text-sm text-muted-foreground mt-1">
-          {description}
-        </div>
-      </div>
-    </div>
-  </Button>
-)
-
-const VehicleList = ({ 
-  vehicles, 
-  onSelect,
-  onAdd 
-}: { 
-  vehicles: Vehicle[]
-  onSelect: (vehicle: Vehicle) => void
-  onAdd: () => void
-}) => (
-  <div className="space-y-2">
-    {vehicles.map((vehicle, index) => (
-      <Button
-        key={index}
-        variant="ghost"
-        className="w-full justify-between group hover:bg-accent/50"
-        onClick={() => onSelect(vehicle)}
-      >
-        <span className="truncate">
-          {vehicle.make} {vehicle.model} ({vehicle.year})
-        </span>
-        <ChevronRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-all" />
-      </Button>
-    ))}
-    <Button
-      variant="outline"
-      className="w-full justify-start group hover:bg-accent/50"
-      onClick={onAdd}
-    >
-      <Plus className="mr-2 h-4 w-4 group-hover:text-primary transition-colors" />
-      Add Vehicle
-    </Button>
-  </div>
-)
-
-const EmptyVehicleState = ({ onClick }: { onClick: () => void }) => (
-  <div className="text-center space-y-4">
-    <p className="text-muted-foreground">No vehicles saved yet</p>
-    <Button 
-      variant="outline"
-      onClick={onClick} 
-      className="w-full sm:w-auto group hover:bg-accent/50"
-    >
-      <Plus className="mr-2 h-4 w-4 group-hover:text-primary transition-colors" />
-      Add Your First Vehicle
-    </Button>
-  </div>
-)
+const QuickActionButton = dynamic(() => import('@/components/QuickActionButton'))
+const VehicleList = dynamic(() => import('@/components/VehicleList'))
+const EmptyVehicleState = dynamic(() => import('@/components/EmptyVehicleState'))
 
 interface Vehicle {
   make: string
@@ -98,15 +29,13 @@ export default function HomePage() {
     setMounted(true)
   }, [])
 
-  if (!mounted) return null
-
-  const handleGetStarted = () => router.push('/vehicle-selection')
-  const handleAITroubleshooter = () => router.push('/ai-troubleshooter')
-  const handleSelectVehicle = (vehicle: Vehicle) => {
+  const handleGetStarted = useCallback(() => router.push('/vehicle-selection'), [router])
+  const handleAITroubleshooter = useCallback(() => router.push('/ai-troubleshooter'), [router])
+  const handleSelectVehicle = useCallback((vehicle: Vehicle) => {
     router.push(`/dynamic-content?make=${encodeURIComponent(vehicle.make)}&model=${encodeURIComponent(vehicle.model)}&year=${encodeURIComponent(vehicle.year)}`)
-  }
+  }, [router])
 
-  const quickActions: QuickAction[] = [
+  const quickActions = useMemo(() => [
     {
       title: "Search Knowledge Base",
       description: "Find detailed information about your vehicle",
@@ -119,7 +48,9 @@ export default function HomePage() {
       icon: Bot,
       onClick: handleAITroubleshooter
     }
-  ]
+  ], [handleGetStarted, handleAITroubleshooter])
+
+  if (!mounted) return null
 
   return (
     <div className={`h-full flex flex-col ${theme === 'dark' ? 'bg-black text-white' : 'bg-white text-black'}`}>
