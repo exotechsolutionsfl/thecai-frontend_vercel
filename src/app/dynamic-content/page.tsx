@@ -7,7 +7,8 @@ import { Card, CardContent } from "@/components/ui/Card"
 import Image from 'next/image'
 import { TreeBranch } from '@/components/TreeBranch'
 import Loading from '@/components/ui/loading'
-
+import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { useToast } from '@/hooks/useToast'
 
 interface MenuItem {
   uid: string;
@@ -20,7 +21,6 @@ interface MenuItem {
   }[];
 }
 
-
 export default function DynamicContent() {
   const searchParams = useSearchParams()
   const make = searchParams.get('make')
@@ -32,6 +32,7 @@ export default function DynamicContent() {
   const [error, setError] = useState<string | null>(null)
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({})
   const [loadingItems, setLoadingItems] = useState<Record<string, boolean>>({})
+  const { toast } = useToast()
 
   const fetchMenuData = useCallback(async (parentUid: string | null = null) => {
     setLoading(true)
@@ -54,12 +55,18 @@ export default function DynamicContent() {
         setMenuData(data)
       }
     } catch (err) {
-      setError('Failed to fetch menu data. Please try again.')
+      const errorMessage = 'Failed to fetch menu data. Please try again.'
+      setError(errorMessage)
       console.error('Error fetching menu data:', err)
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      })
     } finally {
       setLoading(false)
     }
-  }, [make, model, year])
+  }, [make, model, year, toast])
 
   useEffect(() => {
     fetchMenuData()
@@ -186,7 +193,7 @@ export default function DynamicContent() {
   if (loading && menuData.length === 0) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <Loading message="Loading menu data..." />
+        <Loading message="Loading data..." />
       </div>
     )
   }
@@ -200,14 +207,16 @@ export default function DynamicContent() {
   }
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="max-w-5xl mx-auto py-8">
-        <div className="space-y-2">
-          {menuData.map((item, index) => (
-            renderMenuItem(item, 0, index === menuData.length - 1)
-          ))}
+    <ErrorBoundary>
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto py-8">
+          <div className="space-y-2">
+            {menuData.map((item, index) => (
+              renderMenuItem(item, 0, index === menuData.length - 1)
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+    </ErrorBoundary>
   )
 }
