@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/Textarea"
 import { State, Action } from './state'
 import { apiFetch } from '@api/api'
 import ReactMarkdown from 'react-markdown'
+import { useToast } from '@/hooks/useToast'
 
 const AI_NAME = 'Autolex';
 
@@ -212,6 +213,7 @@ export default function Component({ state, dispatch }: ChatInterfaceProps) {
   const [showScrollButton, setShowScrollButton] = useState(false)
   const [isTyping, setIsTyping] = useState(false);
   const [inputValue, setInputValue] = useState('');
+  const { toast } = useToast()
 
   useEffect(() => {
     if (chatEndRef.current) {
@@ -263,6 +265,11 @@ export default function Component({ state, dispatch }: ChatInterfaceProps) {
         errorMessage = error.message;
       }
       dispatch({ type: 'SET_CHAT_HISTORY', payload: [...state.chatHistory, userMessage, { role: 'assistant', content: errorMessage, showFeedback: false }] });
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      })
     } finally {
       dispatch({ type: 'SET_LOADING', payload: { search: false } });
       setIsTyping(false);
@@ -318,6 +325,11 @@ export default function Component({ state, dispatch }: ChatInterfaceProps) {
             i === index ? { ...msg, feedbackSubmitted: true, feedbackLoading: false, feedbackSuccess: true, feedbackError: undefined } : msg
           ),
         });
+        toast({
+          title: "Success",
+          description: "Feedback submitted successfully",
+          variant: "success",
+        })
       } else {
         throw new Error(response.message || 'Failed to submit feedback')
       }
@@ -333,6 +345,11 @@ export default function Component({ state, dispatch }: ChatInterfaceProps) {
           i === index ? { ...msg, feedbackLoading: false, feedbackSuccess: false, feedbackError: errorMessage } : msg
         ),
       });
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      })
     }
   }
 
