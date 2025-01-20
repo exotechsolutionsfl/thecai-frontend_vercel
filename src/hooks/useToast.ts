@@ -1,8 +1,8 @@
-'use client'
+"use client"
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback } from "react"
 
-type ToastVariant = 'default' | 'success' | 'warning' | 'destructive'
+type ToastVariant = "default" | "success" | "warning" | "destructive"
 
 interface Toast {
   id: number
@@ -14,7 +14,7 @@ interface Toast {
 export function useToast() {
   const [toasts, setToasts] = useState<Toast[]>([])
 
-  const toast = useCallback(({ title, description, variant = 'default' }: Omit<Toast, 'id'>) => {
+  const toast = useCallback(({ title, description, variant = "default" }: Omit<Toast, "id">) => {
     const id = Date.now()
     const newToast: Toast = { id, title, description, variant }
     setToasts((prevToasts) => [...prevToasts, newToast])
@@ -25,5 +25,9 @@ export function useToast() {
     }, 5000)
   }, [])
 
-  return { toast, toasts }
+  const removeToast = useCallback((id: number) => {
+    setToasts((prevToasts) => prevToasts.filter((t) => t.id !== id))
+  }, [])
+
+  return { toast, toasts, removeToast }
 }

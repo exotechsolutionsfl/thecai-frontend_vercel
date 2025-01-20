@@ -1,48 +1,51 @@
-'use client'
+"use client"
 
-import { useState } from 'react'
-import { FeedbackModal } from './FeedbackModal'
+import React, { useState, useCallback } from "react"
+import { FeedbackModal } from "./FeedbackModal"
+import { Button } from "./Button"
+import { MessageSquare } from "lucide-react"
 
 export function FeedbackButton() {
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
 
-  const handleFeedbackSubmit = async (type: string, content: string) => {
+  const handleFeedbackSubmit = useCallback(async (type: string, content: string) => {
     try {
-      const response = await fetch('/api/submit-feedback', {
-        method: 'POST',
+      const response = await fetch("/api/submit-feedback", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ type, content }),
-      });
+      })
 
       if (response.ok) {
-        console.log('Feedback submitted successfully');
+        console.log("Feedback submitted successfully")
         // You can add a toast notification here if you want
       } else {
-        console.error('Failed to submit feedback');
+        console.error("Failed to submit feedback")
         // You can add an error toast notification here
       }
     } catch (error) {
-      console.error('Error submitting feedback:', error);
+      console.error("Error submitting feedback:", error)
       // You can add an error toast notification here
     }
-  };
+  }, [])
+
+  const openFeedbackModal = useCallback(() => setIsFeedbackOpen(true), [])
+  const closeFeedbackModal = useCallback(() => setIsFeedbackOpen(false), [])
 
   return (
     <>
-      <button
-        onClick={() => setIsFeedbackOpen(true)}
-        className="bg-[#232323] text-[#FFA500] px-4 py-2 rounded-md hover:bg-[#2C2C2E] transition-colors duration-300"
-        aria-label="Open feedback form"
+      <Button
+        onClick={openFeedbackModal}
+        variant="outline"
+        size="sm"
+        className="bg-background text-foreground hover:bg-accent hover:text-accent-foreground"
       >
+        <MessageSquare className="w-4 h-4 mr-2" />
         Leave Feedback
-      </button>
-      <FeedbackModal
-        isOpen={isFeedbackOpen}
-        onClose={() => setIsFeedbackOpen(false)}
-        onSubmit={handleFeedbackSubmit}
-      />
+      </Button>
+      <FeedbackModal isOpen={isFeedbackOpen} onClose={closeFeedbackModal} onSubmit={handleFeedbackSubmit} />
     </>
   )
 }
